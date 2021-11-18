@@ -45,39 +45,32 @@ int uc_grow(uc_int *x, int n)
 }
 
 /*
- *
+ * Convert byte-encoded integer _bytes_ (big-endian) of length _nbytes_ to integer
  */
 int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes)
 {
-    uc_digit d;
-    int digit_ctr;
+    uc_grow(x, (nbytes * 8) / DIGIT_BITS + 1);
 
-    uc_grow(x, 64); // TODO: fixme
-
-    digit_ctr = 0;
-    d = 0;
-    for ( int i = 0; i < 8 * nbytes; ++i )
+    int digit_ctr = 0;
+    uc_digit d = 0;
+    for ( int i = 0; i < 8 * nbytes; ++i ) // iterate bit-wise over _bytes_
     {
         int b_i = (bytes[i/8] >> (i%8)) & 1;
-        printf("b_%d = %d\n", i, b_i);
-        printf("i mod digit_bits = %d\n", i % DIGIT_BITS);
         d += (b_i << (i % DIGIT_BITS));
 
-        if ( (i + 1) % DIGIT_BITS == 0 )
+        if ( (i + 1) % DIGIT_BITS == 0 ) // we have filled up a uc_digit (with DIGIT_BITS bits)
         {
-            x->digits[digit_ctr] = d;
+            x->digits[digit_ctr++] = d;
             x->used++;
             d = 0;
-            digit_ctr++;
         }
-
-        printf("\n");
     }
 
+    // Add final digit
     x->digits[digit_ctr] = d;
     x->used++;
 
-    // Remove trailing 0's. TODO: check if this is needed
+    // Remove trailing 0's. (TODO: check if this is needed)
     while ( x->digits[x->used-1] == 0 )
         --(x->used);
 
