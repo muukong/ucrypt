@@ -16,6 +16,7 @@
  * - A uc_digit can hold DIGIT_BITS + 1 bits
  * - A uc_word can hold 2 * DIGIT_BITS + 1 bits
  */
+
 /*
 #define DIGIT_BITS      7
 typedef unsigned char uc_digit;
@@ -34,6 +35,11 @@ typedef struct
     int sign;           // UC_NEG or UC_POS
 } uc_int;
 
+/* Simple inline operations */
+
+
+
+
 /*
  * Basic operations
  */
@@ -42,6 +48,8 @@ int uc_init(uc_int *x);
 
 int uc_grow(uc_int *x, int n);
 
+int uc_init_from_int(uc_int *x, int n);
+int uc_init_from_long(uc_int *x, long n);
 int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes);
 
 void debug_print(uc_int *x);

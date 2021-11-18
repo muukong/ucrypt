@@ -44,6 +44,47 @@ int uc_grow(uc_int *x, int n)
     return UC_OK;
 }
 
+int uc_init_from_int(uc_int *x, int n)
+{
+    return uc_init_from_long(x, n);
+}
+
+int uc_init_from_long(uc_int *x, long n)
+{
+    uc_grow(x, sizeof(n) / sizeof(uc_digit) + 1);
+
+    if ( n < 0 )
+    {
+        x->sign = UC_NEG;
+        n *= -1; // TODO: can this overflow?
+    }
+    else
+        x->sign = UC_POS;
+
+    int digit_ctr = 0;
+    uc_digit d = 0;
+    for ( int i = 0; n > 0; ++i, n >>= 1 )
+    {
+        d += (n & 1) << (i % DIGIT_BITS);
+        if ( (i + 1) % DIGIT_BITS == 0 )
+        {
+            x->digits[digit_ctr++] = d;
+            x->used++;
+            d = 0;
+        }
+    }
+
+    // Add final digit
+    x->digits[digit_ctr] = d;
+    x->used++;
+
+    // Remove trailing 0's. (TODO: check if this is needed)
+    while ( x->digits[x->used-1] == 0 )
+        --(x->used);
+
+    return UC_OK;
+}
+
 /*
  * Convert byte-encoded integer _bytes_ (big-endian) of length _nbytes_ to integer
  */
@@ -84,6 +125,7 @@ void debug_print(uc_int *x)
     printf("UC Integer:\n");
     printf("Used  = %d\n", x->used);
     printf("Alloc = %d\n", x->alloc);
+    printf("Sign = %d\n", x->sign);
     printf("Digits: [");
     for ( i = 0; i < x->alloc; ++i )
     {
