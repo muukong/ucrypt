@@ -6,6 +6,12 @@
 #include "integer.h"
 #include "ucalloc.h"
 
+static int _uc_add(uc_int *res, uc_int *x, uc_int *y);
+
+/*
+ * Basic operations
+ */
+
 int uc_init(uc_int *x)
 {
     if ( !x )
@@ -15,6 +21,15 @@ int uc_init(uc_int *x)
     x->alloc = 0;
     x->used = 0;
     x->sign = UC_POS;
+
+    return UC_OK;
+}
+
+int uc_init_zero(uc_int *x)
+{
+    uc_init(x);
+    uc_grow(x, 1);
+    uc_zero_out(x);
 
     return UC_OK;
 }
@@ -51,6 +66,7 @@ int uc_init_from_int(uc_int *x, int n)
 
 int uc_init_from_long(uc_int *x, long n)
 {
+    uc_init(x);
     uc_grow(x, sizeof(n) / sizeof(uc_digit) + 1);
 
     if ( n < 0 )
@@ -90,6 +106,7 @@ int uc_init_from_long(uc_int *x, long n)
  */
 int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes)
 {
+    uc_init(x);
     uc_grow(x, (nbytes * 8) / DIGIT_BITS + 1);
 
     int digit_ctr = 0;
@@ -118,6 +135,28 @@ int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes)
     return UC_OK;
 }
 
+int uc_zero_out(uc_int *x)
+{
+    for ( int i = 0; i < x->used; ++i )
+        x->digits[i] = 0;
+    x->used = 1;
+    x->sign = UC_POS;
+
+    return UC_OK;
+}
+
+int uc_free(uc_int *x)
+{
+    uc_zero_out(x);     // make sure potentially sensitive data is erased from memory
+    XFREE(x->digits);
+    x->digites = NULL;
+    x->used = 0;
+    x->alloc = 0;
+    x->sign = UC_POS;
+
+    return UC_OK;
+}
+
 void debug_print(uc_int *x)
 {
     int i;
@@ -135,4 +174,87 @@ void debug_print(uc_int *x)
             printf("_%02x ", x->digits[i]);
     }
     printf("]\n");
+}
+
+/*
+ * Comparisons
+ */
+
+/*
+ * x < y ==>  return UC_LT
+ * x == y ==> return UC_EQ
+ * x > y ==>  return UC_GT
+ */
+int uc_cmp_int(uc_int *x, uc_int *y)
+{
+    if ( x->used < y->used )
+        return UC_LT;
+    if ( x->used > y->used )
+        return UC_GT;
+
+    for ( int i = x->used - 1; i >= 0; --i )
+    {
+        if ( x->digits[i] < y->digits[i] )
+            return UC_LT;
+        if ( x->digits[i] > y->digits[i] )
+            return UC_GT;
+    }
+
+    return UC_EQ;
+}
+
+/*
+ * Arithmetic operations
+ */
+
+int uc_add(uc_int *z, uc_int *x, uc_int *y)
+{
+    if ( uc_lt(x,y) )
+    {
+        printf("case 1");
+        return _uc_add(z, y, x);
+    }
+    else
+    {
+        printf("case 2");
+        return _uc_add(z, x, y);
+    }
+}
+
+/*
+ * Compute res = x * where where x >= y >= 0
+ */
+static int _uc_add(uc_int *res, uc_int *x, uc_int *y)
+{
+    int i;
+
+    uc_grow(res, x->used + 1);
+
+    uc_digit mask = (uc_digit) ~(((uc_digit) ~0) << DIGIT_BITS);
+
+    uc_digit carry = 0;
+    puts("");
+    for ( i = 0; i < y->used; ++i )
+    {
+        uc_digit tmp = x->digits[i] + y->digits[i] + carry;
+        carry = tmp >> DIGIT_BITS;
+        res->digits[i] = tmp & mask;
+        res->used++;
+    }
+
+    for ( ; i < x->used; ++i )
+    {
+        uc_digit tmp = x->digits[i] + carry;
+        carry = tmp >> DIGIT_BITS;
+        res->digits[i] = tmp & mask;
+        res->used++;
+    }
+
+    if ( carry > 0 )
+    {
+        res->digits[i] = carry;
+        res->used++;
+    }
+
+    return UC_OK;
 }

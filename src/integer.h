@@ -7,6 +7,10 @@
 #define UC_NEG 1
 #define UC_POS 0
 
+#define UC_LT -1
+#define UC_EQ 0
+#define UC_GT 1
+
 #define UC_OK               1       // Indicates that operation was successful
 #define UC_INPUT_ERR        -1      // Indicates that operation was not successful
 #define UC_MEM_ERR          -2      // Insufficient memory
@@ -17,15 +21,15 @@
  * - A uc_word can hold 2 * DIGIT_BITS + 1 bits
  */
 
-/*
 #define DIGIT_BITS      7
 typedef unsigned char uc_digit;
 typedef unsigned short uc_word;
- */
 
+/*
 #define DIGIT_BITS      31
 typedef unsigned int    uc_digit;
 typedef unsigned long   uc_word;
+ */
 
 typedef struct
 {
@@ -45,12 +49,37 @@ typedef struct
  */
 
 int uc_init(uc_int *x);
-
-int uc_grow(uc_int *x, int n);
-
+int uc_init_zero(uc_int *x);
 int uc_init_from_int(uc_int *x, int n);
 int uc_init_from_long(uc_int *x, long n);
 int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes);
+
+int uc_zero_out(uc_int *x);
+int uc_free(uc_int *x);
+int uc_grow(uc_int *x, int n);
+
+/*
+ * Comparisons
+ */
+
+int uc_cmp_int(uc_int *x, uc_int *y);
+
+#define uc_eq(x, y) (uc_cmp_int((x),(y)) == UC_EQ)      // ==
+#define uc_neq(x, y) (uc_cmp_int((x),(y)) != UC_EQ)     // !=
+#define uc_lt(x, y) (uc_cmp_int((x),(y)) == UC_LT)      // <
+#define uc_lte(x, y) (uc_cmp_int((x),(y)) != UC_GT)     // <=
+#define uc_ge(x, y) (uc_cmp_int((x),(y)) == UC_GT)      // >
+#define uc_gee(x, y) (uc_cmp_int((x),(y)) != UC_LT)     // >=
+
+#define uc_is_zero(x) ((x)->used == 1 && (x)->digits[0] == 0)
+#define uc_is_pos(x) ((x)->sign == UC_NEG)
+#define uc_is_neg(x) ((x)->sign == UC_NEG)
+
+/*
+ * Arithmetic operations
+ */
+
+int uc_add(uc_int *z, uc_int *x, uc_int *y);
 
 void debug_print(uc_int *x);
 
