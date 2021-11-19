@@ -7,6 +7,7 @@
 #include "ucalloc.h"
 
 static int _uc_add(uc_int *res, uc_int *x, uc_int *y);
+static int _uc_mult(uc_int *res, uc_int *x, uc_int *y);
 
 /*
  * Basic operations
@@ -149,7 +150,7 @@ int uc_free(uc_int *x)
 {
     uc_zero_out(x);     // make sure potentially sensitive data is erased from memory
     XFREE(x->digits);
-    x->digites = NULL;
+    x->digits = NULL;
     x->used = 0;
     x->alloc = 0;
     x->sign = UC_POS;
@@ -180,12 +181,30 @@ void debug_print(uc_int *x)
  * Comparisons
  */
 
+/* Compare two integers (signed) */
+int uc_cmp(uc_int *x, uc_int *y)
+{
+    if ( x->sign != y->sign )
+    {
+        if (x->sign == UC_NEG)
+            return UC_LT;
+        else
+            return UC_GT;
+    }
+
+    if ( x->sign == UC_NEG )
+        return uc_cmp_mag(y, x);
+    else
+        return uc_cmp_mag(x, y);
+}
+
 /*
- * x < y ==>  return UC_LT
- * x == y ==> return UC_EQ
- * x > y ==>  return UC_GT
+ * Compare magnitude of two integers, i.e.,
+ * |x| < |y| ==>  return UC_LT
+ * |x| == |y| ==> return UC_EQ
+ * |x| > |y| ==>  return UC_GT
  */
-int uc_cmp_int(uc_int *x, uc_int *y)
+int uc_cmp_mag(uc_int *x, uc_int *y)
 {
     if ( x->used < y->used )
         return UC_LT;
@@ -258,3 +277,26 @@ static int _uc_add(uc_int *res, uc_int *x, uc_int *y)
 
     return UC_OK;
 }
+
+int uc_mult(uc_int *z, uc_int *x, uc_int *y)
+{
+    if ( uc_lt(x, y) )
+        return _uc_mult(z, y,x);
+    else
+        return _uc_mult(z, x,y);
+}
+
+/*
+ * Compute res = x * where |x| >= |y|
+ */
+static int _uc_mult(uc_int *res, uc_int *x, uc_int *y)
+{
+
+}
+
+int uc_flip_sign(uc_int *x)
+{
+    if ( uc_is_zero(x) ) // do nothing for zero (it's sign is always positive)
+        return UC_OK;
+}
+
