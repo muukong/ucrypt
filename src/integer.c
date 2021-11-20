@@ -137,9 +137,7 @@ int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes)
     x->digits[digit_ctr] = d;
     x->used++;
 
-    // Remove trailing 0's. (TODO: replace with clamp)
-    while ( x->digits[x->used-1] == 0 )
-        --(x->used);
+    uc_clamp(x);
 
     return UC_OK;
 }
