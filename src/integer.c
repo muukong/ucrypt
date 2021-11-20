@@ -95,9 +95,7 @@ int uc_init_from_long(uc_int *x, long n)
     x->digits[digit_ctr] = d;
     x->used++;
 
-    // Remove trailing 0's. (TODO: check if this is needed)
-    while ( x->digits[x->used-1] == 0 )
-        --(x->used);
+    uc_clamp(x);
 
     return UC_OK;
 }
