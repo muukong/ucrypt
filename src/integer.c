@@ -267,15 +267,13 @@ static int _uc_add(uc_int *res, uc_int *x, uc_int *y)
 
     uc_grow(res, x->used + 1);
 
-    uc_digit mask = (uc_digit) ~(((uc_digit) ~0) << DIGIT_BITS);
-
     uc_digit carry = 0;
     puts("");
     for ( i = 0; i < y->used; ++i )
     {
         uc_digit tmp = x->digits[i] + y->digits[i] + carry;
         carry = tmp >> DIGIT_BITS;
-        res->digits[i] = tmp & mask;
+        res->digits[i] = tmp & UC_DIGIT_MASK;
         res->used++;
     }
 
@@ -283,7 +281,7 @@ static int _uc_add(uc_int *res, uc_int *x, uc_int *y)
     {
         uc_digit tmp = x->digits[i] + carry;
         carry = tmp >> DIGIT_BITS;
-        res->digits[i] = tmp & mask;
+        res->digits[i] = tmp & UC_DIGIT_MASK;
         res->used++;
     }
 
@@ -308,14 +306,12 @@ int uc_mul(uc_int *z, uc_int *x, uc_int *y)
 }
 
 /*
- * Compute res = x * where |x| >= |y|
+ * Compute res = |x| * |y|
  */
 static int _uc_mul(uc_int *res, uc_int *x, uc_int *y)
 {
     int n = x->used;
     int m = y->used;
-
-    uc_word mask = (uc_digit) ~(((uc_digit) ~0) << DIGIT_BITS);
 
     /* Allocate enough space, zero out memory, and set minimum number of digits */
     uc_zero_out(res);
@@ -333,7 +329,7 @@ static int _uc_mul(uc_int *res, uc_int *x, uc_int *y)
                           ((uc_word) y->digits[i]) +
                           ((uc_word) c);
 
-            res->digits[i+j] = tmp & mask;
+            res->digits[i+j] = tmp & UC_DIGIT_MASK;
             c = tmp >> DIGIT_BITS;
         }
 

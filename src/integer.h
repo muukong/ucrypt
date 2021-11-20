@@ -11,6 +11,8 @@
 #define UC_EQ 0
 #define UC_GT 1
 
+#define UC_DIGIT_MASK ((uc_digit) ~(((uc_digit) ~0) << DIGIT_BITS))
+
 #define UC_OK               1       // Indicates that operation was successful
 #define UC_INPUT_ERR        -1      // Indicates that operation was not successful
 #define UC_MEM_ERR          -2      // Insufficient memory
