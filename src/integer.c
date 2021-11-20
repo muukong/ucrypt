@@ -247,15 +247,9 @@ int uc_cmp_mag(uc_int *x, uc_int *y)
 int uc_add(uc_int *z, uc_int *x, uc_int *y)
 {
     if ( uc_lt(x,y) )
-    {
-        printf("case 1");
         return _uc_add(z, y, x);
-    }
     else
-    {
-        printf("case 2");
         return _uc_add(z, x, y);
-    }
 }
 
 /*
