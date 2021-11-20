@@ -251,9 +251,6 @@ int uc_cmp_mag(uc_int *x, uc_int *y)
 
 int uc_add(uc_int *z, uc_int *x, uc_int *y)
 {
-    /* Ensure that z is initialized with 0 */
-    uc_zero_out(z);
-
     /*
      * Ensure that |x| >= |y| (this is required by the base addition algorithm).
      *
@@ -312,9 +309,13 @@ static int _uc_add(uc_int *res, uc_int *x, uc_int *y)
 {
     assert(uc_cmp_mag(x, y) != UC_LT);
 
+    /* Ensure that z is initialized with 0 and that there is enough space to hold the result */
+    uc_zero_out(res);
+    uc_grow(res, x->used + 1);
+    res->used = res->used + 1;
+
     int i;
 
-    uc_grow(res, x->used + 1);
 
     uc_digit carry = 0;
     for ( i = 0; i < y->used; ++i )
@@ -347,8 +348,6 @@ static int _uc_add(uc_int *res, uc_int *x, uc_int *y)
  */
 int uc_sub(uc_int *z, uc_int *x, uc_int *y)
 {
-    // TODO: zero out z
-
     /*
      * Ensure that |x| >= |y| (this is required by the base subtraction algorithm).
      *
@@ -408,6 +407,8 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
 {
     assert(uc_cmp_mag(x, y) != UC_LT);
 
+    /* Ensure that z is initialized with 0 and that there is enough space to hold the result */
+    uc_zero_out(z);
     uc_grow(z, x->used + 1);
     z->used = x->used + 1;
 
