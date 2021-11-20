@@ -39,11 +39,6 @@ typedef struct
     int sign;           // UC_NEG or UC_POS
 } uc_int;
 
-/* Simple inline operations */
-
-
-
-
 /*
  * Basic operations
  */
@@ -65,13 +60,12 @@ int uc_grow(uc_int *x, int n);
 int uc_cmp(uc_int *x, uc_int *y);
 int uc_cmp_mag(uc_int *x, uc_int *y);
 
-// TODO: test these in detail
 #define uc_eq(x, y) (uc_cmp((x),(y)) == UC_EQ)      // ==
 #define uc_neq(x, y) (uc_cmp((x),(y)) != UC_EQ)     // !=
 #define uc_lt(x, y) (uc_cmp((x),(y)) == UC_LT)      // <
 #define uc_lte(x, y) (uc_cmp((x),(y)) != UC_GT)     // <=
-#define uc_ge(x, y) (uc_cmp((x),(y)) == UC_GT)      // >
-#define uc_gee(x, y) (uc_cmp((x),(y)) != UC_LT)     // >=
+#define uc_gt(x, y) (uc_cmp((x),(y)) == UC_GT)      // >
+#define uc_gte(x, y) (uc_cmp((x),(y)) != UC_LT)     // >=
 
 #define uc_is_zero(x) ((x)->used == 1 && (x)->digits[0] == 0)
 #define uc_is_pos(x) ((x)->sign == UC_NEG)
@@ -82,7 +76,7 @@ int uc_cmp_mag(uc_int *x, uc_int *y);
  */
 
 int uc_add(uc_int *z, uc_int *x, uc_int *y);
-int uc_mult(uc_int *z, uc_int *x, uc_int *y);
+int uc_mul(uc_int *z, uc_int *x, uc_int *y);
 
 int uc_flip_sign(uc_int *x);
 

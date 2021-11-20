@@ -7,7 +7,7 @@
 #include "ucalloc.h"
 
 static int _uc_add(uc_int *res, uc_int *x, uc_int *y);
-static int _uc_mult(uc_int *res, uc_int *x, uc_int *y);
+static int _uc_mul(uc_int *res, uc_int *x, uc_int *y);
 
 /*
  * Basic operations
@@ -176,6 +176,18 @@ void debug_print(uc_int *x)
     }
     printf("]\n");
 }
+void debug_print_bytes(uc_int *x)
+{
+    int i;
+    for ( i = 0; i < x->alloc; ++i )
+    {
+        if ( i < x->used )
+            printf("0x%02x, ", x->digits[i]);
+        else
+            printf("_%02x ", x->digits[i]);
+    }
+    printf("]\n");
+}
 
 /*
  * Comparisons
@@ -278,25 +290,60 @@ static int _uc_add(uc_int *res, uc_int *x, uc_int *y)
     return UC_OK;
 }
 
-int uc_mult(uc_int *z, uc_int *x, uc_int *y)
+int uc_mul(uc_int *z, uc_int *x, uc_int *y)
 {
-    if ( uc_lt(x, y) )
-        return _uc_mult(z, y,x);
-    else
-        return _uc_mult(z, x,y);
+    int status;
+
+    status = _uc_mul(z, x, y);
+    if ( x->sign != y->sign )
+        uc_flip_sign(z);
+
+    return status;
 }
 
 /*
  * Compute res = x * where |x| >= |y|
  */
-static int _uc_mult(uc_int *res, uc_int *x, uc_int *y)
+static int _uc_mul(uc_int *res, uc_int *x, uc_int *y)
 {
+    uc_word mask = (uc_digit) ~(((uc_digit) ~0) << DIGIT_BITS);
+    uc_grow(res, 80); // TODO
+    uc_zero_out(res);
 
+    int n = x->used;
+    int m = y->used;
+
+    for ( int i = 0; i < m; ++i )
+    {
+        uc_word c  = 0;
+        for ( int j = 0; j < n; ++j )
+        {
+            uc_word x_j = x->digits[j];
+            uc_word y_i = y->digits[i];
+            uc_word d_ij = res->digits[i+j];
+            uc_word tmp = d_ij + x_j * y_i + c;
+
+            res->digits[i+j] = tmp & mask;
+            c = tmp >> DIGIT_BITS;
+        }
+        res->digits[i+n] = c;
+    }
+
+    res->used = 80; // TODO: fix
+
+    return UC_OK;
 }
 
 int uc_flip_sign(uc_int *x)
 {
     if ( uc_is_zero(x) ) // do nothing for zero (it's sign is always positive)
         return UC_OK;
+
+    if ( x->sign == UC_POS )
+        x->sign = UC_NEG;
+    else
+        x->sign = UC_POS;
+
+    return UC_OK;
 }
 
