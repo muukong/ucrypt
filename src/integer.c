@@ -251,13 +251,58 @@ int uc_cmp_mag(uc_int *x, uc_int *y)
 
 int uc_add(uc_int *z, uc_int *x, uc_int *y)
 {
-    // TODO: implement sign
+    /* Ensure that z is initialized with 0 */
+    uc_zero_out(z);
 
+    /*
+     * Ensure that |x| >= |y| (this is required by the base addition algorithm).
+     *
+     * If |x| >= |y|, there is nothing to do
+     * If |x| < |y|,  we switch x and y
+     *
+     * This works since x + y = y + x
+     */
+    if ( uc_cmp_mag(x, y) == UC_LT )
+    {
+        uc_int *swap = x;
+        x = y;
+        y = swap;
+        puts("SWITCH");
+    }
 
-    if ( uc_lt(x,y) )
-        return _uc_add(z, y, x);
-    else
-        return _uc_add(z, x, y);
+    assert( uc_cmp_mag(x, y) == UC_GT );
+
+    int xs = x->sign;
+    int ys = y->sign;
+
+    int status;
+
+    if ( xs == UC_POS && ys == UC_POS )
+    {
+        puts("+/+");
+        status = _uc_add(z, x, y);
+        z->sign = UC_POS;
+    }
+    else if ( xs == UC_NEG && ys == UC_POS )
+    {
+        puts("-/+");
+        status = _uc_sub(z, x, y);
+        z->sign = UC_NEG;
+    }
+    else if ( xs == UC_POS && ys == UC_NEG )
+    {
+        puts("+/-");
+        status = _uc_sub(z, x, y);
+        z->sign = UC_POS;
+    }
+    else // xs == UC_NEG && ys == UC_NEG
+    {
+        puts("-/-");
+        status = _uc_add(z, x, y);
+        z->sign = UC_NEG;
+    }
+
+    return status;
 }
 
 /*
@@ -272,7 +317,6 @@ static int _uc_add(uc_int *res, uc_int *x, uc_int *y)
     uc_grow(res, x->used + 1);
 
     uc_digit carry = 0;
-    puts("");
     for ( i = 0; i < y->used; ++i )
     {
         uc_digit tmp = x->digits[i] + y->digits[i] + carry;
@@ -303,6 +347,8 @@ static int _uc_add(uc_int *res, uc_int *x, uc_int *y)
  */
 int uc_sub(uc_int *z, uc_int *x, uc_int *y)
 {
+    // TODO: zero out z
+
     /*
      * Ensure that |x| >= |y| (this is required by the base subtraction algorithm).
      *
@@ -323,12 +369,14 @@ int uc_sub(uc_int *z, uc_int *x, uc_int *y)
     int xs = x->sign;
     int ys = y->sign;
 
-    /* There are four combinations for (xs,ys) which we need to handle separtely */
+    /* There are four combinations for (xs,ys) which we need to handle separately */
 
     int status;
+
     if ( xs == UC_POS  && ys == UC_POS )
     {
         status = _uc_sub(z, x, y);
+        z->sign = UC_POS;
     }
     else if ( xs == UC_NEG && ys == UC_POS )
     {
