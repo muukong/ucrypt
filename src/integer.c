@@ -102,6 +102,14 @@ int uc_init_from_long(uc_int *x, long n)
     return UC_OK;
 }
 
+int uc_clamp(uc_int *x)
+{
+    while ( x->digits[x->used - 1] == 0 )
+        --(x->used);
+
+    return UC_OK;
+}
+
 /*
  * Convert byte-encoded integer _bytes_ (big-endian) of length _nbytes_ to integer
  */
@@ -129,7 +137,7 @@ int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes)
     x->digits[digit_ctr] = d;
     x->used++;
 
-    // Remove trailing 0's. (TODO: check if this is needed)
+    // Remove trailing 0's. (TODO: replace with clamp)
     while ( x->digits[x->used-1] == 0 )
         --(x->used);
 
@@ -306,30 +314,35 @@ int uc_mul(uc_int *z, uc_int *x, uc_int *y)
  */
 static int _uc_mul(uc_int *res, uc_int *x, uc_int *y)
 {
-    uc_word mask = (uc_digit) ~(((uc_digit) ~0) << DIGIT_BITS);
-    uc_grow(res, 80); // TODO
-    uc_zero_out(res);
-
     int n = x->used;
     int m = y->used;
 
+    uc_word mask = (uc_digit) ~(((uc_digit) ~0) << DIGIT_BITS);
+
+    /* Allocate enough space, zero out memory, and set minimum number of digits */
+    uc_zero_out(res);
+    uc_grow(res, n + m + 2);
+    res->used = n + m + 2;  // Let's be generous - we can clamp at the end
+
     for ( int i = 0; i < m; ++i )
     {
-        uc_word c  = 0;
+        uc_word c  = 0;     // carry
         for ( int j = 0; j < n; ++j )
         {
-            uc_word x_j = x->digits[j];
-            uc_word y_i = y->digits[i];
-            uc_word d_ij = res->digits[i+j];
-            uc_word tmp = d_ij + x_j * y_i + c;
+            // tmp = r_ij + x_j * y_i + c
+            uc_word tmp = ((uc_word) res->digits[i+j]) +
+                          ((uc_word) x->digits[j]) *
+                          ((uc_word) y->digits[i]) +
+                          ((uc_word) c);
 
             res->digits[i+j] = tmp & mask;
             c = tmp >> DIGIT_BITS;
         }
+
         res->digits[i+n] = c;
     }
 
-    res->used = 80; // TODO: fix
+    uc_clamp(res);
 
     return UC_OK;
 }
