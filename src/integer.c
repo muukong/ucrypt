@@ -197,7 +197,11 @@ void debug_print_bytes(uc_int *x)
  * Comparisons
  */
 
-/* Compare two integers (signed) */
+/* Compare two integers (signed)
+ * x < y  ==> returns UC_LT
+ * x == y ==> returns UC_EQ
+ * x > y ==> returns UC_GT
+ * */
 int uc_cmp(uc_int *x, uc_int *y)
 {
     if ( x->sign != y->sign )
