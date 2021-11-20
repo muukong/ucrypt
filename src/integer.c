@@ -350,3 +350,7 @@ int uc_flip_sign(uc_int *x)
     return UC_OK;
 }
 
+int uc_gc(uc_int *z, uc_int *x, uc_int *y)
+{
+
+}

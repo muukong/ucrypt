@@ -76,6 +76,9 @@ int uc_cmp_mag(uc_int *x, uc_int *y);
 #define uc_is_pos(x) ((x)->sign == UC_NEG)
 #define uc_is_neg(x) ((x)->sign == UC_NEG)
 
+#define uc_is_odd(x) ((x)->digits[0] & 1)
+#define uc_is_even(x) (!uc_is_odd(x))
+
 /*
  * Arithmetic operations
  */
@@ -84,6 +87,12 @@ int uc_add(uc_int *z, uc_int *x, uc_int *y);
 int uc_mul(uc_int *z, uc_int *x, uc_int *y);
 
 int uc_flip_sign(uc_int *x);
+
+int uc_gc(uc_int *z, uc_int *x, uc_int *y);
+
+/*
+ * Miscellaneous / Debug
+ */
 
 void debug_print(uc_int *x);
 
