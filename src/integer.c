@@ -411,7 +411,7 @@ int uc_mul(uc_int *z, uc_int *x, uc_int *y)
 
     status = _uc_mul(z, x, y);
     if ( x->sign != y->sign )
-        uc_flip_sign(z);
+        z->sign = UC_NEG;
 
     return status;
 }
