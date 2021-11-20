@@ -23,7 +23,7 @@
  * - A uc_word can hold 2 * DIGIT_BITS + 1 bits
  */
 
-#define DIGIT_BITS      7
+#define DIGIT_BITS      7u
 typedef unsigned char uc_digit;
 typedef unsigned short uc_word;
 
@@ -84,11 +84,20 @@ int uc_cmp_mag(uc_int *x, uc_int *y);
  */
 
 int uc_add(uc_int *z, uc_int *x, uc_int *y);
+int uc_sub(uc_int *z, uc_int *x, uc_int *y);
 int uc_mul(uc_int *z, uc_int *x, uc_int *y);
+int uc_div_2(uc_int *z, uc_int x);
 
 int uc_flip_sign(uc_int *x);
 
 int uc_gc(uc_int *z, uc_int *x, uc_int *y);
+
+/*
+ * Arithmetic algorithms
+ */
+
+int uc_gcd(uc_int *z, uc_int *x, uc_int *y);
+uc_word uc_gcd_word(uc_word x, uc_word y);
 
 /*
  * Miscellaneous / Debug

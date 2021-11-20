@@ -7,7 +7,10 @@
 #include "ucalloc.h"
 
 static int _uc_add(uc_int *res, uc_int *x, uc_int *y);
+static int _uc_sub(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_mul(uc_int *res, uc_int *x, uc_int *y);
+
+static uc_word _uc_gcd_word(uc_word x, uc_word y);
 
 /*
  * Basic operations
@@ -248,6 +251,9 @@ int uc_cmp_mag(uc_int *x, uc_int *y)
 
 int uc_add(uc_int *z, uc_int *x, uc_int *y)
 {
+    // TODO: implement sign
+
+
     if ( uc_lt(x,y) )
         return _uc_add(z, y, x);
     else
@@ -289,6 +295,100 @@ static int _uc_add(uc_int *res, uc_int *x, uc_int *y)
 
     return UC_OK;
 }
+
+/*
+ * Subtract two integers with x >= y > 0
+ */
+int uc_sub(uc_int *z, uc_int *x, uc_int *y)
+{
+    // TODO: implement signs
+    int xs = x->sign;
+    int ys = y->sign;
+    int cmp = uc_cmp_mag(x, y);
+
+    if ( xs != ys )
+    {
+
+    }
+
+
+    _uc_sub(z, x, y); // TODO: handle signs
+}
+
+static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
+{
+    uc_grow(z, x->used + 1);
+    z->used = x->used + 1;
+
+    int i;
+    uc_digit c = 0; // carry
+    uc_digit tmp;
+    for ( i = 0; i < y->used; ++i )
+    {
+        printf("\n### i = %d\n", i);
+        uc_digit x_i = x->digits[i];
+        uc_digit y_i = y->digits[i];
+
+        printf("x_i = %x\n", x_i);
+        printf("y_i = %x\n", y_i);
+
+        tmp = x_i - y_i - c;
+        printf("tmp = %x\n", tmp);
+
+        c = tmp >> ((uc_digit)(8 * sizeof (uc_digit) - 1));
+        printf("c = %d\n", c);
+
+        z->digits[i] = tmp & UC_DIGIT_MASK;
+        printf("z_i = %x\n", z->digits[i]);
+    }
+
+    for ( ; i < x->used; ++i )
+    {
+        tmp = x->digits[i] - c;
+        c = tmp >> ((uc_digit)(8 * sizeof (uc_digit) - 1));
+        z->digits[i] = tmp & UC_DIGIT_MASK;
+    }
+
+    uc_clamp(z);
+
+    return UC_OK;
+}
+
+// TODO: remove this backup
+/*
+static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
+{
+    uc_grow(z, x->used + 1);
+    z->used = x->used + 1;
+
+    uc_digit c = 0; // carry
+    uc_digit tmp;
+    for ( int i = 0; i < x->used; ++i )
+    {
+        printf("\n### i = %d\n", i);
+        uc_digit x_i = x->digits[i];
+        uc_digit y_i = (i < y->used ? y->digits[i] : 0);
+
+        printf("x_i = %x\n", x_i);
+        printf("y_i = %x\n", y_i);
+
+        tmp = x_i - y_i - c;
+        printf("tmp = %x\n", tmp);
+
+        c = tmp >> ((uc_digit)(8 * sizeof (uc_digit) - 1));
+        printf("c = %d\n", c);
+
+        z->digits[i] = tmp & UC_DIGIT_MASK;
+        printf("z_i = %x\n", z->digits[i]);
+
+    }
+
+    uc_clamp(z);
+
+    return UC_OK;
+}
+*/
+
 
 int uc_mul(uc_int *z, uc_int *x, uc_int *y)
 {
@@ -353,4 +453,47 @@ int uc_flip_sign(uc_int *x)
 int uc_gc(uc_int *z, uc_int *x, uc_int *y)
 {
 
+}
+
+int uc_gcd(uc_int *z, uc_int *x, uc_int *y)
+{
+
+}
+
+/*
+ * Calculate GCD for two positive integers x and y.
+ */
+uc_word uc_gcd_word(uc_word x, uc_word y)
+{
+    return x >= y ? _uc_gcd_word(x, y) : _uc_gcd_word(y, x);
+}
+
+/*
+ * Calculate GCD for two positive integers with x >= y
+ */
+static uc_word _uc_gcd_word(uc_word x, uc_word y)
+{
+    uc_word g = 1;
+    while ( x % 2 == 0 && y % 2 == 0 )
+    {
+        x /= 2;
+        y /= 2;
+        g *= 2;
+    }
+
+    while ( x != 0 )
+    {
+        while ( x % 2 == 0 )
+            x /= 2;
+        while ( y % 2 == 0 )
+            y /= 2;
+
+        uc_word tmp = (x >= y ? (x - y) : (y - x)) / 2;     // |x - y| / 2
+        if ( x >= y )
+            x = tmp;
+        else
+            y = tmp;
+    }
+
+    return g * y;
 }
