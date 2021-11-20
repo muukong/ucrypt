@@ -265,6 +265,8 @@ int uc_add(uc_int *z, uc_int *x, uc_int *y)
  */
 static int _uc_add(uc_int *res, uc_int *x, uc_int *y)
 {
+    assert(uc_cmp_mag(x, y) != UC_LT);
+
     int i;
 
     uc_grow(res, x->used + 1);
@@ -297,26 +299,67 @@ static int _uc_add(uc_int *res, uc_int *x, uc_int *y)
 }
 
 /*
- * Subtract two integers with x >= y > 0
+ * Calculate z = x - y for arbitrary UC integers x and y
  */
 int uc_sub(uc_int *z, uc_int *x, uc_int *y)
 {
-    // TODO: implement signs
-    int xs = x->sign;
-    int ys = y->sign;
-    int cmp = uc_cmp_mag(x, y);
-
-    if ( xs != ys )
+    /*
+     * Ensure that |x| >= |y| (this is required by the base subtraction algorithm).
+     *
+     * If |x| >= |y|, there is nothing to do
+     * If |x| < |y|,  we swich x and y and remeber to flip the sign in the end since -(x - y) = (y - x)
+     */
+    int flip_sign = 0;
+    if ( uc_cmp_mag(x, y) == UC_LT )
     {
-
+        uc_int *swap = x;
+        x = y;
+        y = swap;
+        flip_sign = 1;
     }
 
+    assert( uc_cmp_mag(x, y) == UC_GT );
 
-    _uc_sub(z, x, y); // TODO: handle signs
+    int xs = x->sign;
+    int ys = y->sign;
+
+    /* There are four combinations for (xs,ys) which we need to handle separtely */
+
+    int status;
+    if ( xs == UC_POS  && ys == UC_POS )
+    {
+        status = _uc_sub(z, x, y);
+    }
+    else if ( xs == UC_NEG && ys == UC_POS )
+    {
+        status = _uc_add(z, x, y);
+        z->sign = UC_NEG;
+    }
+    else if ( xs == UC_POS && ys == UC_NEG )
+    {
+        status = _uc_add(z, x, y);
+        z->sign = UC_POS;
+    }
+    else // xs == UC_NEG && ys == UC_NEG
+    {
+        status = _uc_sub(z, x, y);
+        z->sign = UC_NEG;
+    }
+
+    /* Flip sign if x and y were swapped */
+    if ( flip_sign )
+        uc_flip_sign(z);
+
+    return status;
 }
 
+/*
+ * Subtract two integers with |x| >= |y| and x, y >= 0
+ */
 static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
 {
+    assert(uc_cmp_mag(x, y) != UC_LT);
+
     uc_grow(z, x->used + 1);
     z->used = x->used + 1;
 
@@ -325,21 +368,14 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
     uc_digit tmp;
     for ( i = 0; i < y->used; ++i )
     {
-        printf("\n### i = %d\n", i);
         uc_digit x_i = x->digits[i];
         uc_digit y_i = y->digits[i];
 
-        printf("x_i = %x\n", x_i);
-        printf("y_i = %x\n", y_i);
-
         tmp = x_i - y_i - c;
-        printf("tmp = %x\n", tmp);
 
         c = tmp >> ((uc_digit)(8 * sizeof (uc_digit) - 1));
-        printf("c = %d\n", c);
 
         z->digits[i] = tmp & UC_DIGIT_MASK;
-        printf("z_i = %x\n", z->digits[i]);
     }
 
     for ( ; i < x->used; ++i )
@@ -353,42 +389,6 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
 
     return UC_OK;
 }
-
-// TODO: remove this backup
-/*
-static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
-{
-    uc_grow(z, x->used + 1);
-    z->used = x->used + 1;
-
-    uc_digit c = 0; // carry
-    uc_digit tmp;
-    for ( int i = 0; i < x->used; ++i )
-    {
-        printf("\n### i = %d\n", i);
-        uc_digit x_i = x->digits[i];
-        uc_digit y_i = (i < y->used ? y->digits[i] : 0);
-
-        printf("x_i = %x\n", x_i);
-        printf("y_i = %x\n", y_i);
-
-        tmp = x_i - y_i - c;
-        printf("tmp = %x\n", tmp);
-
-        c = tmp >> ((uc_digit)(8 * sizeof (uc_digit) - 1));
-        printf("c = %d\n", c);
-
-        z->digits[i] = tmp & UC_DIGIT_MASK;
-        printf("z_i = %x\n", z->digits[i]);
-
-    }
-
-    uc_clamp(z);
-
-    return UC_OK;
-}
-*/
-
 
 int uc_mul(uc_int *z, uc_int *x, uc_int *y)
 {
