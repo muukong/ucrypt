@@ -6,9 +6,9 @@
 #include "integer.h"
 #include "ucalloc.h"
 
-static int _uc_add(uc_int *res, uc_int *x, uc_int *y);
+static int _uc_add(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_sub(uc_int *z, uc_int *x, uc_int *y);
-static int _uc_mul(uc_int *res, uc_int *x, uc_int *y);
+static int _uc_mul(uc_int *z, uc_int *x, uc_int *y);
 
 static uc_word _uc_gcd_word(uc_word x, uc_word y);
 
@@ -264,7 +264,6 @@ int uc_add(uc_int *z, uc_int *x, uc_int *y)
         uc_int *swap = x;
         x = y;
         y = swap;
-        puts("SWITCH");
     }
 
     assert( uc_cmp_mag(x, y) == UC_GT );
@@ -276,25 +275,21 @@ int uc_add(uc_int *z, uc_int *x, uc_int *y)
 
     if ( xs == UC_POS && ys == UC_POS )
     {
-        puts("+/+");
         status = _uc_add(z, x, y);
         z->sign = UC_POS;
     }
     else if ( xs == UC_NEG && ys == UC_POS )
     {
-        puts("-/+");
         status = _uc_sub(z, x, y);
         z->sign = UC_NEG;
     }
     else if ( xs == UC_POS && ys == UC_NEG )
     {
-        puts("+/-");
         status = _uc_sub(z, x, y);
         z->sign = UC_POS;
     }
     else // xs == UC_NEG && ys == UC_NEG
     {
-        puts("-/-");
         status = _uc_add(z, x, y);
         z->sign = UC_NEG;
     }
@@ -303,41 +298,39 @@ int uc_add(uc_int *z, uc_int *x, uc_int *y)
 }
 
 /*
- * Compute res = x * where where x >= y >= 0
+ * Compute z = x * where where x >= y >= 0
  */
-static int _uc_add(uc_int *res, uc_int *x, uc_int *y)
+static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
 {
     assert(uc_cmp_mag(x, y) != UC_LT);
 
     /* Ensure that z is initialized with 0 and that there is enough space to hold the result */
-    uc_zero_out(res);
-    uc_grow(res, x->used + 1);
-    res->used = res->used + 1;
+    uc_zero_out(z);
+    uc_grow(z, x->used + 1);
+    z->used = z->used + 1;
 
     int i;
-
-
-    uc_digit carry = 0;
+    uc_digit c = 0;     // carry
     for ( i = 0; i < y->used; ++i )
     {
-        uc_digit tmp = x->digits[i] + y->digits[i] + carry;
-        carry = tmp >> DIGIT_BITS;
-        res->digits[i] = tmp & UC_DIGIT_MASK;
-        res->used++;
+        uc_digit tmp = x->digits[i] + y->digits[i] + c;
+        c = tmp >> DIGIT_BITS;
+        z->digits[i] = tmp & UC_DIGIT_MASK;
+        z->used++;
     }
 
     for ( ; i < x->used; ++i )
     {
-        uc_digit tmp = x->digits[i] + carry;
-        carry = tmp >> DIGIT_BITS;
-        res->digits[i] = tmp & UC_DIGIT_MASK;
-        res->used++;
+        uc_digit tmp = x->digits[i] + c;
+        c = tmp >> DIGIT_BITS;
+        z->digits[i] = tmp & UC_DIGIT_MASK;
+        z->used++;
     }
 
-    if ( carry > 0 )
+    if (c > 0 )
     {
-        res->digits[i] = carry;
-        res->used++;
+        z->digits[i] = c;
+        z->used++;
     }
 
     return UC_OK;
@@ -451,17 +444,17 @@ int uc_mul(uc_int *z, uc_int *x, uc_int *y)
 }
 
 /*
- * Compute res = |x| * |y|
+ * Compute z = |x| * |y|
  */
-static int _uc_mul(uc_int *res, uc_int *x, uc_int *y)
+static int _uc_mul(uc_int *z, uc_int *x, uc_int *y)
 {
     int n = x->used;
     int m = y->used;
 
     /* Allocate enough space, zero out memory, and set minimum number of digits */
-    uc_zero_out(res);
-    uc_grow(res, n + m + 2);
-    res->used = n + m + 2;  // Let's be generous - we can clamp at the end
+    uc_zero_out(z);
+    uc_grow(z, n + m + 2);
+    z->used = n + m + 2;  // Let's be generous - we can clamp at the end
 
     for ( int i = 0; i < m; ++i )
     {
@@ -469,19 +462,19 @@ static int _uc_mul(uc_int *res, uc_int *x, uc_int *y)
         for ( int j = 0; j < n; ++j )
         {
             // tmp = r_ij + x_j * y_i + c
-            uc_word tmp = ((uc_word) res->digits[i+j]) +
+            uc_word tmp = ((uc_word) z->digits[i + j]) +
                           ((uc_word) x->digits[j]) *
                           ((uc_word) y->digits[i]) +
                           ((uc_word) c);
 
-            res->digits[i+j] = tmp & UC_DIGIT_MASK;
+            z->digits[i + j] = tmp & UC_DIGIT_MASK;
             c = tmp >> DIGIT_BITS;
         }
 
-        res->digits[i+n] = c;
+        z->digits[i + n] = c;
     }
 
-    uc_clamp(res);
+    uc_clamp(z);
 
     return UC_OK;
 }
