@@ -104,5 +104,6 @@ uc_word uc_gcd_word(uc_word x, uc_word y);
  */
 
 void debug_print(uc_int *x);
+void debug_print_bytes(uc_int *x);
 
 #endif //UCRYPT_INTEGER_H

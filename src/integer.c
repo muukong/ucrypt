@@ -1,10 +1,13 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "integer.h"
 #include "ucalloc.h"
+
+/*
+ * Helper functions that are only used internally
+ */
 
 static int _uc_add(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_sub(uc_int *z, uc_int *x, uc_int *y);
@@ -165,36 +168,6 @@ int uc_free(uc_int *x)
     return UC_OK;
 }
 
-void debug_print(uc_int *x)
-{
-    int i;
-
-    printf("UC Integer:\n");
-    printf("Used  = %d\n", x->used);
-    printf("Alloc = %d\n", x->alloc);
-    printf("Sign = %d\n", x->sign);
-    printf("Digits: [");
-    for ( i = 0; i < x->alloc; ++i )
-    {
-        if ( i < x->used )
-            printf("0x%02x, ", x->digits[i]);
-        else
-            printf("_%02x ", x->digits[i]);
-    }
-    printf("]\n");
-}
-void debug_print_bytes(uc_int *x)
-{
-    int i;
-    for ( i = 0; i < x->alloc; ++i )
-    {
-        if ( i < x->used )
-            printf("0x%02x, ", x->digits[i]);
-        else
-            printf("_%02x ", x->digits[i]);
-    }
-    printf("]\n");
-}
 
 /*
  * Comparisons
@@ -492,11 +465,6 @@ int uc_flip_sign(uc_int *x)
     return UC_OK;
 }
 
-int uc_gc(uc_int *z, uc_int *x, uc_int *y)
-{
-
-}
-
 int uc_gcd(uc_int *z, uc_int *x, uc_int *y)
 {
 
@@ -538,4 +506,39 @@ static uc_word _uc_gcd_word(uc_word x, uc_word y)
     }
 
     return g * y;
+}
+
+/*
+ * Miscellaneous / Debug
+ */
+
+void debug_print(uc_int *x)
+{
+    int i;
+
+    printf("UC Integer:\n");
+    printf("Used  = %d\n", x->used);
+    printf("Alloc = %d\n", x->alloc);
+    printf("Sign = %d\n", x->sign);
+    printf("Digits: [");
+    for ( i = 0; i < x->alloc; ++i )
+    {
+        if ( i < x->used )
+            printf("0x%02x, ", x->digits[i]);
+        else
+            printf("_%02x ", x->digits[i]);
+    }
+    printf("]\n");
+}
+void debug_print_bytes(uc_int *x)
+{
+    int i;
+    for ( i = 0; i < x->alloc; ++i )
+    {
+        if ( i < x->used )
+            printf("0x%02x, ", x->digits[i]);
+        else
+            printf("_%02x ", x->digits[i]);
+    }
+    printf("]\n");
 }
