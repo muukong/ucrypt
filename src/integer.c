@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "integer.h"
 #include "ucalloc.h"
@@ -106,9 +107,30 @@ int uc_init_from_long(uc_int *x, long n)
     return UC_OK;
 }
 
+/*
+ * For any non-zero number, make sure that x->digits[x->used-1] is a non-zero digit. If
+ * x is zero, we set x->used to 1.
+ *
+ * For example, the clamped version of
+ * x = [ b_0 b_1 b_2 ... b_k 0 0 0 0 0 0 0 ]
+ *                             ^
+ *                             |
+ *                             x_used
+ * is (assuming b_k is not zero)
+ * x = [ b_0 b_1 b_2 ... b_3 0 0 0 0 0 0 0 ]
+ *                        ^
+ *                        |
+ *                        x_used
+ *
+ * If x is zero, the clamped version looks as follows:
+ * x = [ 0 0 0 0 ... 0 0 0 0 0 0 0 0 ]
+ *       ^
+ *       |
+ *       x_used
+ */
 int uc_clamp(uc_int *x)
 {
-    while ( x->digits[x->used - 1] == 0 )
+    while ( x->used > 1 && x->digits[x->used - 1] == 0 )
         --(x->used);
 
     return UC_OK;
