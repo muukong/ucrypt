@@ -589,12 +589,28 @@ static int _uc_mul(uc_int *z, uc_int *x, uc_int *y)
 
 /*
  * Compute z = x * d for z, x UC integers and digit d.
+ *
+ * TODO: Use another algorithm to improve speed
  */
 int uc_mul_d(uc_int *z, uc_int *x, uc_digit d)
 {
     uc_int tmp;
     uc_init_from_digit(&tmp, d);
     int status = uc_mul(z, x, &tmp);
+    uc_free(&tmp);
+    return status;
+}
+
+/*
+ * Compute x = 2 * y
+ *
+ * TODO: Use a more efficient algorithm
+ */
+int uc_mul_2(uc_int *x, uc_int *y)
+{
+    uc_int tmp;
+    int status = uc_init_from_int(&tmp, 2);
+    uc_mul(x, y, &tmp);
     uc_free(&tmp);
     return status;
 }
