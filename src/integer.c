@@ -235,7 +235,7 @@ int uc_zero_out(uc_int *x)
 
 int uc_copy(uc_int *x, uc_int *y)
 {
-    uc_zero_out(&x);
+    uc_zero_out(x);
 
     if ( y->used > x->used )
         uc_grow(x, y->used);
