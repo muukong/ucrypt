@@ -57,10 +57,11 @@ int uc_init_from_long(uc_int *x, long n);
 int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes);
 
 int uc_zero_out(uc_int *x);
-int uc_free(uc_int *x);
+int uc_copy(uc_int *x, uc_int *y);
 
 int uc_grow(uc_int *x, int n);
 int uc_clamp(uc_int *x);
+int uc_free(uc_int *x);
 
 /*
  * Comparisons

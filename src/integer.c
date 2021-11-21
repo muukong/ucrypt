@@ -159,6 +159,22 @@ int uc_zero_out(uc_int *x)
     return UC_OK;
 }
 
+int uc_copy(uc_int *x, uc_int *y)
+{
+    uc_zero_out(&x);
+
+    if ( y->used > x->used )
+        uc_grow(x, y->used);
+
+    for ( int i = 0; i < y->used; ++i )
+        x->digits[i] = y->digits[i];
+
+    x->used = y->used;
+    x->sign = y->sign;
+
+    return UC_OK;
+}
+
 int uc_free(uc_int *x)
 {
     uc_zero_out(x);     // make sure potentially sensitive data is erased from memory
