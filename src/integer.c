@@ -565,6 +565,94 @@ int uc_mul_d(uc_int *z, uc_int *x, uc_digit d)
     return status;
 }
 
+/* Shift y left by n bits and store result in x */
+int uc_lshb(uc_int *x, uc_int *y, int n)
+{
+    uc_copy(x, y);
+
+    // Ensure that x can hold result
+    if ( x->alloc < x->used + (n / DIGIT_BITS) + 1)
+        uc_grow(x, x->used + (n / DIGIT_BITS) + 1);
+
+    if ( n >= DIGIT_BITS )
+    {
+        uc_lshd(x, n / DIGIT_BITS);
+        n %= DIGIT_BITS;
+    }
+
+    if ( n == 0 )
+        return UC_OK;
+
+    for ( int i = x->used - 1; i >= 0; --i )
+    {
+        uc_digit shift = DIGIT_BITS - n;
+
+        uc_digit mask = (((uc_digit)1u) << n) - 1;
+
+        uc_digit lsb = (x->digits[i] << n) & UC_DIGIT_MASK;
+        uc_digit msb = (x->digits[i] >> shift) & mask;
+        x->digits[i] = lsb;
+        x->digits[i+1] |= msb;
+    }
+
+    x->used = x->alloc;
+    uc_clamp(x);
+
+    return UC_OK;
+}
+
+/*
+ * Shift x left by y >= digits.
+ *
+ * For example, if y = 3:
+ * [x_0 x_1 x_2 x_3 ... x_{n-1}] --> [0 0 0 x_0 x_1 x_2 x_3 ... x_{n-1}]
+ * (Note: The array above depicts the actual internal representation in x->digits)
+ */
+int uc_lshd(uc_int *x, int y)
+{
+    assert(y >= 0);
+
+    uc_grow(x, x->used + y);
+
+    /* Iterate backwards (i.e. from x_{n-1} to x_0) and copy x_i to x_{i+y} */
+    for ( int i = x->used - 1; i >= 0; --i )
+        x->digits[i + y] = x->digits[i];
+
+    /* Zero out the first y digits */
+    for ( int i = 0; i < y; ++i )
+        x->digits[i] = 0;
+
+    x->used += y;
+}
+
+/*
+ * Shift x right by y >= 0 digits.
+ *
+ * For example, if y = 3:
+ * [x_0 x_1 x_2 x-3 ... x_n] --> [x_3 x_4 ... x_n 0 0 0]
+ * (Note: The array above depicts the actual internal representation in x->digits)
+ */
+int uc_rshd(uc_int *x, int y)
+{
+    assert(y >= 0);
+
+    int i;
+
+    for ( i = 0; i < x->used - y; ++i )
+        x->digits[i] = x->digits[i+y];
+
+    for ( ; i < x->used; ++i )
+        x->digits[i] = 0;
+
+    x->used -= y;
+}
+
+int uc_abs(uc_int *x, uc_int *y)
+{
+    int status = uc_copy(x, y);
+    x->sign = UC_POS;
+    return status;
+}
 
 int uc_flip_sign(uc_int *x)
 {
