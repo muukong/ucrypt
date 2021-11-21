@@ -13,6 +13,7 @@
 static int _uc_add(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_sub(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_mul(uc_int *z, uc_int *x, uc_int *y);
+static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 
 static uc_word _uc_gcd_word(uc_word x, uc_word y);
 
@@ -598,6 +599,19 @@ int uc_mul_d(uc_int *z, uc_int *x, uc_digit d)
     return status;
 }
 
+int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
+{
+
+}
+
+/*
+ * Compute q and r s.t. x = q * y + r with r < y for x >= 0 and y > 0
+ */
+static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
+{
+
+}
+
 /*
  * Compute x = (y << n) for n >= 0
  *
@@ -755,6 +769,43 @@ int uc_flip_sign(uc_int *x)
         x->sign = UC_POS;
 
     return UC_OK;
+}
+
+/*
+ * Count the number of bits in x.
+ *
+ */
+int uc_count_bits(uc_int *x)
+{
+    assert( x->digits != NULL );
+
+    /*
+     * TODO:
+     *
+     * Open question: How many bits are required for zero?
+     */
+    if (uc_is_zero(x) )
+        return 1;
+
+    int nbits = (x->used - 1) * DIGIT_BITS;
+    printf("nbits_ = %d\n", nbits);
+
+    /*
+     * Let the most significant digit be [d_0, d_1, ..., d_{DIGIT_BITS-1}]. We look for the largest i
+     * (in descending order) s.t. d_i != 0 and then add (i+1) to the current count.
+     */
+    printf("x_last = %x\n", x->digits[x->used-1]);
+    for ( int i = DIGIT_BITS - 1; i >= 0; --i )
+    {
+        if ( x->digits[x->used-1] & (1u << i) )
+        {
+            printf("i: %d\n", i);
+            nbits += (i + 1);
+            break;
+        }
+    }
+
+    return nbits;
 }
 
 int uc_gcd(uc_int *z, uc_int *x, uc_int *y)
