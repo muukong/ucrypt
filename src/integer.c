@@ -328,6 +328,15 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
     return UC_OK;
 }
 
+int uc_add_d(uc_int *z, uc_int *x, uc_digit d)
+{
+    uc_int y;
+    uc_init_from_long(&y, d); // fix: use init_from_digit
+    int status = uc_add(z, x, &y);
+    uc_free(&y);
+    return status;
+}
+
 /*
  * Calculate z = x - y for arbitrary UC integers x and y
  */

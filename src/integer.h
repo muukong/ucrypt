@@ -89,6 +89,7 @@ int uc_cmp_mag(uc_int *x, uc_int *y);
  */
 
 int uc_add(uc_int *z, uc_int *x, uc_int *y);
+int uc_add_d(uc_int *z, uc_int *x, uc_digit d);
 int uc_sub(uc_int *z, uc_int *x, uc_int *y);
 int uc_mul(uc_int *z, uc_int *x, uc_int *y);
 int uc_mul_d(uc_int *z, uc_int *x, uc_digit d);
