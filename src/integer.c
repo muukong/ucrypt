@@ -41,6 +41,20 @@ int uc_init_zero(uc_int *x)
     return UC_OK;
 }
 
+int uc_copy_int(uc_int *dst, uc_int *src)
+{
+    uc_grow(dst, src->used);
+    uc_zero_out(dst);
+
+    for ( int i = 0; i < src->used; ++i )
+        dst->digits[i] = src->digits[i];
+
+    dst->used = src->used;
+    dst->sign = dst->sign;
+
+    return UC_OK;
+}
+
 int uc_grow(uc_int *x, int n)
 {
     assert( x && n >= 0 );
@@ -126,16 +140,34 @@ int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes)
     uc_digit d = 0;
     for ( int i = 0; i < 8 * nbytes; ++i ) // iterate bit-wise over _bytes_
     {
-        int b_i = (bytes[i/8] >> (i%8)) & 1;
+        puts("");
+        if ( i % 8 == 0 )
+            printf("\n### Byte %d ###\n", i / 8);
+        printf("i = %d\n", i);
+        printf("n-th bit = %d\n", i + 1);
+
+
+        //puts("");
+        uc_digit b_i = (((uc_word) bytes[i/8]) >> (i%8)) & 1u;
+        printf("bytes[i/8] = 0x%02x\n", bytes[i/8]);
+        printf("i % 8 == %d\n", i % 8);
+        printf("b_i = %d\n", b_i);
+        //printf("b_i = %d\n", b_i);
+        printf("%d", b_i);
+        printf("d = 0x%02x\n", d);
         d += (b_i << (i % DIGIT_BITS));
+        printf("d_ = 0x%02x\n", d);
 
         if ( (i + 1) % DIGIT_BITS == 0 ) // we have filled up a uc_digit (with DIGIT_BITS bits)
         {
+            printf("D = 0x%02x\n", d);
             x->digits[digit_ctr++] = d;
             x->used++;
             d = 0;
         }
+
     }
+    puts("");
 
     // Add final digit
     x->digits[digit_ctr] = d;
@@ -148,6 +180,9 @@ int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes)
 
 int uc_zero_out(uc_int *x)
 {
+    if ( !x->digits )
+        uc_grow(x, 1);
+
     for ( int i = 0; i < x->used; ++i )
         x->digits[i] = 0;
     x->used = 1;
@@ -268,6 +303,17 @@ int uc_add(uc_int *z, uc_int *x, uc_int *y)
     }
 
     return status;
+}
+
+int uc_add_d(uc_int *z, uc_int *x, uc_digit y)
+{
+    uc_int tmp;
+    uc_init_from_long(&tmp, y); // TODO: implement "init from digit" function. Otherwiwise, this is a bug.
+
+    uc_add(z, x, &tmp);
+    uc_free(&tmp);
+
+    return UC_OK;
 }
 
 /*
@@ -416,6 +462,19 @@ int uc_mul(uc_int *z, uc_int *x, uc_int *y)
     return status;
 }
 
+int uc_mul_d(uc_int *z, uc_int *x, uc_digit y)
+{
+    uc_int tmp;
+    uc_init(&tmp);
+    uc_init_from_long(&tmp, y); // TODO: implement init from digit function - o/w this is a bug
+
+    //uc_mul(z, x, &tmp);
+
+    //uc_free(&tmp);
+
+    return UC_OK;
+}
+
 /*
  * Compute z = |x| * |y|
  */
@@ -452,6 +511,123 @@ static int _uc_mul(uc_int *z, uc_int *x, uc_int *y)
     return UC_OK;
 }
 
+
+/*
+ * Compute z = x ^ 2
+ */
+int uc_sqr(uc_int *z, uc_int *x)
+{
+    // TODO: Implement faster algorithm
+    return uc_mul(z, x, x);
+}
+
+int uc_div(uc_int *c, uc_int *d, uc_int *a, uc_int *b)
+{
+    uc_int ta, tb, tq, q;
+    int res, n, n2;
+
+    uc_init(&ta);
+    uc_init(&tb);
+    uc_init(&tq);
+    uc_init(&tq);
+
+    uc_init_from_int(&tq, 1);
+}
+
+/* Shift y left by n bits and store result in x */
+int uc_lshb(uc_int *x, uc_int *y, int n)
+{
+
+    printf("y = ");
+    debug_print_bytes(y);
+    uc_copy_int(x, y);
+    printf("x = ");
+    debug_print_bytes(x);
+
+    // Ensure that x can hold result
+    if ( x->alloc < x->used + (n / DIGIT_BITS) + 1)
+        uc_grow(x, x->used + (n / DIGIT_BITS) + 1);
+
+    if ( n >= DIGIT_BITS )
+    {
+        uc_lshd(x, n / DIGIT_BITS);
+        n %= DIGIT_BITS;
+    }
+
+    if ( n == 0 )
+        return UC_OK;
+
+    for ( int i = x->used - 1; i >= 0; --i )
+    {
+        uc_digit shift = DIGIT_BITS - n;
+
+        uc_digit mask = (((uc_digit)1u) << n) - 1;
+
+        uc_digit lsb = (x->digits[i] << n) & UC_DIGIT_MASK;
+        uc_digit msb = (x->digits[i] >> shift) & mask;
+        x->digits[i] = lsb;
+        x->digits[i+1] |= msb;
+    }
+
+    x->used = x->alloc;
+    uc_clamp(x);
+
+    return UC_OK;
+}
+
+/*
+ * Shift x left by y >= digits.
+ *
+ * For example, if y = 3:
+ * [x_0 x_1 x_2 x_3 ... x_{n-1}] --> [0 0 0 x_0 x_1 x_2 x_3 ... x_{n-1}]
+ * (Note: The array above depicts the actual internal representation in x->digits)
+ */
+int uc_lshd(uc_int *x, int y)
+{
+    assert(y >= 0);
+
+    uc_grow(x, x->used + y);
+
+     /* Iterate backwards (i.e. from x_{n-1} to x_0) and copy x_i to x_{i+y} */
+    for ( int i = x->used - 1; i >= 0; --i )
+        x->digits[i + y] = x->digits[i];
+
+    /* Zero out the first y digits */
+    for ( int i = 0; i < y; ++i )
+        x->digits[i] = 0;
+
+    x->used += y;
+}
+
+/*
+ * Shift x right by y >= 0 digits.
+ *
+ * For example, if y = 3:
+ * [x_0 x_1 x_2 x-3 ... x_n] --> [x_3 x_4 ... x_n 0 0 0]
+ * (Note: The array above depicts the actual internal representation in x->digits)
+ */
+int uc_rshd(uc_int *x, int y)
+{
+    assert(y >= 0);
+
+    int i;
+
+    for ( i = 0; i < x->used - y; ++i )
+        x->digits[i] = x->digits[i+y];
+
+    for ( ; i < x->used; ++i )
+        x->digits[i] = 0;
+
+    x->used -= y;
+}
+
+int uc_abs(uc_int *x, uc_int *y)
+{
+    int status = uc_copy_int(x, y);
+    x->sign = UC_POS;
+    return status;
+}
+
 int uc_flip_sign(uc_int *x)
 {
     if ( uc_is_zero(x) ) // do nothing for zero (it's sign is always positive)
@@ -465,10 +641,26 @@ int uc_flip_sign(uc_int *x)
     return UC_OK;
 }
 
-int uc_gcd(uc_int *z, uc_int *x, uc_int *y)
-{
+/*
+ * Modular arithmetic
+ */
 
+/*
+ * Compute z = x + y (mod m) for 0 <= x < m and 0 <= y < m
+ */
+int uc_addmod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
+{
+    assert(!uc_is_neg(x) && !uc_is_neg(y));
+    assert(uc_lt(x, m) && uc_lt(y, m));
+
+    uc_add(z, x, y);
+    if (uc_gte(z, m) )
+        uc_sub(z, z, m);
+
+    assert(uc_lt(z, m));
 }
+
+
 
 /*
  * Calculate GCD for two positive integers x and y.
@@ -511,6 +703,41 @@ static uc_word _uc_gcd_word(uc_word x, uc_word y)
 /*
  * Miscellaneous / Debug
  */
+
+// TODO: move
+uc_digit char_to_digit(char ch)
+{
+    if (ch >= '0' && ch <= '9')
+        return ch - '0';
+    if (ch >= 'A' && ch <= 'F')
+        return ch - 'A' + 10;
+    if (ch >= 'a' && ch <= 'f')
+        return ch - 'a' + 10;
+    return -1;
+}
+
+int uc_read_radix(uc_int *x, char *bytes, int radix)
+{
+    assert(0 <= radix && radix <= 16); // TODO; generalize this
+
+    uc_zero_out(x);
+
+    while ( *bytes )
+    {
+        uc_int tmp;
+        uc_zero_out(&tmp);
+        uc_mul_d(&tmp, x, radix);
+        //uc_copy_int(x, &tmp);
+
+        uc_digit d = char_to_digit(*bytes);
+        printf("d = %d\n", d);
+        //uc_add_d(x, x, d);
+
+        ++bytes;
+    }
+
+    return UC_OK;
+}
 
 void debug_print(uc_int *x)
 {

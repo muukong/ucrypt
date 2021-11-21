@@ -46,16 +46,16 @@ typedef struct
  */
 
 int uc_init(uc_int *x);
-int uc_init_zero(uc_int *x);
+int uc_init_from_uc_int(uc_int *x);
 int uc_init_from_int(uc_int *x, int n);
 int uc_init_from_long(uc_int *x, long n);
 int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes);
 
 int uc_zero_out(uc_int *x);
-int uc_free(uc_int *x);
+int uc_copy_int(uc_int *dst, uc_int *src);
 
 int uc_grow(uc_int *x, int n);
-
+int uc_free(uc_int *x);
 int uc_clamp(uc_int *x);
 
 /*
@@ -80,20 +80,33 @@ int uc_cmp_mag(uc_int *x, uc_int *y);
 #define uc_is_even(x) (!uc_is_odd(x))
 
 /*
- * Arithmetic operations
+ * Integer arithmetic
  */
 
 int uc_add(uc_int *z, uc_int *x, uc_int *y);
+int uc_add_d(uc_int *z, uc_int *x, uc_digit y);
 int uc_sub(uc_int *z, uc_int *x, uc_int *y);
 int uc_mul(uc_int *z, uc_int *x, uc_int *y);
-int uc_div_2(uc_int *z, uc_int x);
+int uc_mul_d(uc_int *z, uc_int *x, uc_digit y);
+int uc_sqr(uc_int *z, uc_int *x);
+int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
+
+int uc_lshb(uc_int *x, uc_int *y, int n);
+int uc_lshd(uc_int *x, int y);
+int uc_rshd(uc_int *x, int y);
+
+int uc_abs(uc_int *x, uc_int *y);
 
 int uc_flip_sign(uc_int *x);
 
-int uc_gc(uc_int *z, uc_int *x, uc_int *y);
+/*
+ * Modular arithmetic in Z_m = {0, 1, 2, ..., m-1}
+ */
+
+int uc_addmod(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
 
 /*
- * Arithmetic algorithms
+ * Integer algorithms
  */
 
 int uc_gcd(uc_int *z, uc_int *x, uc_int *y);
@@ -102,6 +115,8 @@ uc_word uc_gcd_word(uc_word x, uc_word y);
 /*
  * Miscellaneous / Debug
  */
+
+int uc_read_radix(uc_int *x, char *bytes, int radix);
 
 void debug_print(uc_int *x);
 void debug_print_bytes(uc_int *x);
