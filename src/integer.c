@@ -57,6 +57,14 @@ int uc_grow(uc_int *x, int n)
 
         x->digits = tmp;
 
+        /*
+         * Growing an integer does not change x->used for non-zero numbers. However,
+         * if x->digits was NULL (i.e., x->used == 0) we must increase x->used
+         * to 1.
+         */
+        if ( x->used == 0 )
+            x->used = 1;
+
         // Zero out excess digits
         i = x->alloc;
         x->alloc = n;
