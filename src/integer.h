@@ -111,7 +111,7 @@ uc_word uc_gcd_word(uc_word x, uc_word y);
  * Conversion
  */
 
-
+int uc_read_radix(uc_int *x, const char *y, int radix);
 
 /*
  * Miscellaneous / Debug

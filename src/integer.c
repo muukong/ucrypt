@@ -505,7 +505,6 @@ static int _uc_mul(uc_int *z, uc_int *x, uc_int *y)
 int uc_mul_d(uc_int *z, uc_int *x, uc_digit d)
 {
     uc_int tmp;
-    //uc_init(&tmp);
     uc_init_from_long(&tmp, d); // fix: make sure that this works for all digits
     int status = uc_mul(z, x, &tmp);
     uc_free(&tmp);
@@ -567,6 +566,61 @@ static uc_word _uc_gcd_word(uc_word x, uc_word y)
     }
 
     return g * y;
+}
+
+/*
+ * Conversion
+ */
+
+int uc_read_radix(uc_int *x, const char *y, int radix)
+{
+    assert(2 <= radix && radix <= 16);
+
+    /*
+    /* Initialize x with zero and ensure that we have enough room
+     */
+    uc_zero_out(x);
+    uc_grow(x, strlen(y) * radix / DIGIT_BITS + 1);
+
+    uc_int tmp;
+    uc_init(&tmp);
+
+    for ( ; *y; ++y )
+    {
+        uc_mul_d(&tmp, x, radix);
+        uc_copy(x, &tmp);
+
+        /*
+         * Convert input character to digit. The alphabet allows
+         * upper and lower case hexadecimal characters.
+         */
+        uc_digit d;
+        if (*y >= '0' && *y <= '9')
+            d = *y - '0';
+        else if (*y >= 'A' && *y <= 'F')
+            d = *y - 'A' + 10;
+        else if (*y >= 'a' && *y <= 'f')
+            d = *y - 'a' + 10;
+        else
+            return UC_INPUT_ERR;
+
+
+
+        uc_add_d(&tmp, x, d);
+        uc_copy(x, &tmp);
+
+        puts("");
+        printf("c = %c\n", *y);
+        printf("d = %d\n", d);
+        debug_print_bytes(x);
+        puts("");
+    }
+
+    uc_free(&tmp);
+
+    uc_clamp(x);
+
+    return UC_OK;
 }
 
 /*
