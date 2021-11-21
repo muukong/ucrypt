@@ -585,12 +585,26 @@ static uc_word _uc_gcd_word(uc_word x, uc_word y)
 int uc_read_radix(uc_int *x, const char *y, int radix)
 {
     assert(2 <= radix && radix <= 16);
+    assert(strlen(y) > 0);
 
     /*
     /* Initialize x with zero and ensure that we have enough room
      */
     uc_zero_out(x);
-    uc_grow(x, strlen(y) * radix / DIGIT_BITS + 1);
+    uc_grow(x, (strlen(y) * radix) / DIGIT_BITS + 1);
+
+    /*
+     * Extract the sign and store it. Since at this point x is zero we cannot assign
+     * a negative sign; therefore, we assign it at the end of the function.
+     */
+    int sign = UC_POS;
+    if ( *y == '+' )
+        ++y;
+    else if ( *y == '-' )
+    {
+        sign = UC_NEG;
+        ++y;
+    }
 
     uc_int tmp;
     uc_init(&tmp);
@@ -619,6 +633,12 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
         uc_add_d(&tmp, x, d);
         uc_copy(x, &tmp);
     }
+
+    /*
+     * If x is zero we do nothing (i.e., we treat the input "+0" and "-0" as "0").
+     */
+    if ( !uc_is_zero(x) )
+        x->sign = sign;
 
     uc_free(&tmp);
 
