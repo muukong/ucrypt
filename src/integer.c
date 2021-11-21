@@ -452,6 +452,17 @@ static int _uc_mul(uc_int *z, uc_int *x, uc_int *y)
     return UC_OK;
 }
 
+int uc_mul_d(uc_int *z, uc_int *x, uc_digit d)
+{
+    uc_int tmp;
+    //uc_init(&tmp);
+    uc_init_from_long(&tmp, d); // fix: make sure that this works for all digits
+    int status = uc_mul(z, x, &tmp);
+    uc_free(&tmp);
+    return status;
+}
+
+
 int uc_flip_sign(uc_int *x)
 {
     if ( uc_is_zero(x) ) // do nothing for zero (it's sign is always positive)
