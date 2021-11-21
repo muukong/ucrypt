@@ -608,12 +608,6 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
 
         uc_add_d(&tmp, x, d);
         uc_copy(x, &tmp);
-
-        puts("");
-        printf("c = %c\n", *y);
-        printf("d = %d\n", d);
-        debug_print_bytes(x);
-        puts("");
     }
 
     uc_free(&tmp);
