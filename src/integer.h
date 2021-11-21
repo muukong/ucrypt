@@ -33,6 +33,11 @@ typedef unsigned int    uc_digit;
 typedef unsigned long   uc_word;
  */
 
+/*
+ * Multi-precision integer data strcture.
+ *
+ * A uc_int variable _MUST_ be initialize with one of the uc_init_ function before use.
+ */
 typedef struct
 {
     uc_digit *digits;   // array of digits in big endian
@@ -55,7 +60,6 @@ int uc_zero_out(uc_int *x);
 int uc_free(uc_int *x);
 
 int uc_grow(uc_int *x, int n);
-
 int uc_clamp(uc_int *x);
 
 /*
@@ -100,6 +104,12 @@ int uc_gc(uc_int *z, uc_int *x, uc_int *y);
 
 int uc_gcd(uc_int *z, uc_int *x, uc_int *y);
 uc_word uc_gcd_word(uc_word x, uc_word y);
+
+/*
+ * Conversion
+ */
+
+
 
 /*
  * Miscellaneous / Debug
