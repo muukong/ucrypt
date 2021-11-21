@@ -54,6 +54,7 @@ int uc_init(uc_int *x);
 int uc_init_zero(uc_int *x);
 int uc_init_from_int(uc_int *x, int n);
 int uc_init_from_long(uc_int *x, long n);
+int uc_init_from_digit(uc_int *x, uc_digit);
 int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes);
 
 int uc_zero_out(uc_int *x);

@@ -75,12 +75,56 @@ int uc_grow(uc_int *x, int n)
     return UC_OK;
 }
 
+/*
+ * Initialize UC integer x with built-in int n.
+ */
 int uc_init_from_int(uc_int *x, int n)
 {
     return uc_init_from_long(x, n);
 }
 
+/*
+ * Initialize UC integer x with built-in long n.
+ */
 int uc_init_from_long(uc_int *x, long n)
+{
+    uc_init(x);
+    uc_grow(x, sizeof(n) / sizeof(uc_digit) + 1);
+
+    if ( n < 0 )
+    {
+        x->sign = UC_NEG;
+        n *= -1; // TODO: can this overflow?
+    }
+    else
+        x->sign = UC_POS;
+
+    int digit_ctr = 0;
+    uc_digit d = 0;
+    for ( int i = 0; n > 0; ++i, n >>= 1 )
+    {
+        d += (n & 1) << (i % DIGIT_BITS);
+        if ( (i + 1) % DIGIT_BITS == 0 )
+        {
+            x->digits[digit_ctr++] = d;
+            x->used++;
+            d = 0;
+        }
+    }
+
+    // Add final digit
+    x->digits[digit_ctr] = d;
+    x->used++;
+
+    uc_clamp(x);
+
+    return UC_OK;
+}
+
+/*
+ * Initialize x with n.
+ */
+int uc_init_from_digit(uc_int *x, uc_digit n)
 {
     uc_init(x);
     uc_grow(x, sizeof(n) / sizeof(uc_digit) + 1);
@@ -363,7 +407,7 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
 int uc_add_d(uc_int *z, uc_int *x, uc_digit d)
 {
     uc_int y;
-    uc_init_from_long(&y, d); // fix: use init_from_digit
+    uc_init_from_digit(&y, d);
     int status = uc_add(z, x, &y);
     uc_free(&y);
     return status;
@@ -515,7 +559,7 @@ static int _uc_mul(uc_int *z, uc_int *x, uc_int *y)
 int uc_mul_d(uc_int *z, uc_int *x, uc_digit d)
 {
     uc_int tmp;
-    uc_init_from_long(&tmp, d); // fix: make sure that this works for all digits
+    uc_init_from_digit(&tmp, d);
     int status = uc_mul(z, x, &tmp);
     uc_free(&tmp);
     return status;
