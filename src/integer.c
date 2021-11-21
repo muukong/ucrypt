@@ -148,6 +148,9 @@ int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes)
 
 int uc_zero_out(uc_int *x)
 {
+    if ( x->digits == NULL )
+        uc_grow(x, 1);
+
     for ( int i = 0; i < x->used; ++i )
         x->digits[i] = 0;
     x->used = 1;
