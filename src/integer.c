@@ -601,6 +601,41 @@ int uc_lshb(uc_int *x, uc_int *y, int n)
     return UC_OK;
 }
 
+int uc_rshb(uc_int *x, uc_int *y, int n)
+{
+    uc_copy(x, y);
+
+    /*
+     *  Note: After copying y to x, we know that x can hold the final result since
+     *  x <= (y >> n). Therefore, we need not check if we need to grow x.
+     */
+
+    /*
+     *  If n = a * DIGITS + b, we can shift by _a_ digits and then by _b_ bits, which simplifies
+     *  the algorithm.
+     */
+    if ( n >= DIGIT_BITS )
+    {
+        uc_rshd(x, n / DIGIT_BITS);
+        n %= DIGIT_BITS;
+    }
+
+    /* If b = 0 we are already done */
+    if ( n == 0 )
+        return UC_OK;
+
+    uc_digit mask = (((uc_digit) 1) << n) - ((uc_digit) 1);
+    uc_digit r = 0;
+    for ( int i = x->used - 1; i >= 0; --i )
+    {
+        uc_digit rr = x->digits[i] & mask;
+        x->digits[i] = (x->digits[i] >> n) | (r << (DIGIT_BITS - n));
+        r = rr;
+    }
+
+    uc_clamp(x);
+}
+
 /*
  * Shift x left by y >= digits.
  *
