@@ -42,6 +42,17 @@ int uc_init_zero(uc_int *x)
     return UC_OK;
 }
 
+/*
+ * Grow integer x s.t. it has at least n digits allocated.
+ *
+ * For example, growing from k to n digits (n > k):
+ * [b_0 b_1 b_2 .. b_{k-1}] ---grow---> [b_0 b_1 b_2 .. b_k 0 0 ... 0 0 0]
+ *      ^          ^                         ^                          ^
+ *      |          |                         |                          |
+ *      x_used     k-th digit                x_used                     n-th digit
+ *
+ * If x already has at least n digits, we do nothing.
+ */
 int uc_grow(uc_int *x, int n)
 {
     assert( x && n >= 0 );
@@ -122,7 +133,7 @@ int uc_init_from_long(uc_int *x, long n)
 }
 
 /*
- * Initialize x with n.
+ * Initialize UC integer x with digit n.
  */
 int uc_init_from_digit(uc_int *x, uc_digit n)
 {
@@ -220,6 +231,9 @@ int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes)
     return UC_OK;
 }
 
+/*
+ * Assign zero to x (i.e. x := 0)
+ */
 int uc_zero_out(uc_int *x)
 {
     if ( x->digits == NULL )
@@ -233,6 +247,9 @@ int uc_zero_out(uc_int *x)
     return UC_OK;
 }
 
+/*
+ * Copy y to x (i.e. x := y)
+ */
 int uc_copy(uc_int *x, uc_int *y)
 {
     uc_zero_out(x);
@@ -249,9 +266,13 @@ int uc_copy(uc_int *x, uc_int *y)
     return UC_OK;
 }
 
+/*
+ * Release memory allocated for UC integer x. For security reasons, we zero out
+ * the memory.
+ */
 int uc_free(uc_int *x)
 {
-    uc_zero_out(x);     // make sure potentially sensitive data is erased from memory
+    uc_zero_out(x);
     XFREE(x->digits);
     x->digits = NULL;
     x->used = 0;
@@ -315,6 +336,9 @@ int uc_cmp_mag(uc_int *x, uc_int *y)
  * Arithmetic operations
  */
 
+/*
+ * Compute z = x + y
+ */
 int uc_add(uc_int *z, uc_int *x, uc_int *y)
 {
     /*
@@ -364,7 +388,7 @@ int uc_add(uc_int *z, uc_int *x, uc_int *y)
 }
 
 /*
- * Compute z = x * where where x >= y >= 0
+ * Compute z = x + y with |x| >= |y| and x, y >= 0
  */
 static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
 {
@@ -404,6 +428,9 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
     return UC_OK;
 }
 
+/*
+ * Compute z = x + y where x,y UC integers and d digit.
+ */
 int uc_add_d(uc_int *z, uc_int *x, uc_digit d)
 {
     uc_int y;
@@ -414,7 +441,7 @@ int uc_add_d(uc_int *z, uc_int *x, uc_digit d)
 }
 
 /*
- * Calculate z = x - y for arbitrary UC integers x and y
+ * Calculate z = x - y for UC integers x and y
  */
 int uc_sub(uc_int *z, uc_int *x, uc_int *y)
 {
@@ -471,7 +498,7 @@ int uc_sub(uc_int *z, uc_int *x, uc_int *y)
 }
 
 /*
- * Subtract two integers with |x| >= |y| and x, y >= 0
+ * Compute z = x - y with |x| >= |y| and x, y >= 0
  */
 static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
 {
@@ -509,6 +536,9 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
     return UC_OK;
 }
 
+/*
+ * Compute z = x * y
+ */
 int uc_mul(uc_int *z, uc_int *x, uc_int *y)
 {
     int status;
@@ -556,6 +586,9 @@ static int _uc_mul(uc_int *z, uc_int *x, uc_int *y)
     return UC_OK;
 }
 
+/*
+ * Compute z = x * d for z, x UC integers and digit d.
+ */
 int uc_mul_d(uc_int *z, uc_int *x, uc_digit d)
 {
     uc_int tmp;
@@ -565,21 +598,35 @@ int uc_mul_d(uc_int *z, uc_int *x, uc_digit d)
     return status;
 }
 
-/* Shift y left by n bits and store result in x */
+/*
+ * Compute x = (y << n) for n >= 0
+ *
+ * I.e., shift y left by n bits and store result in x
+ */
 int uc_lshb(uc_int *x, uc_int *y, int n)
 {
+    assert(n >= 0);
+
     uc_copy(x, y);
+
+    if ( n == 0 ) // Nothing to do
+        return UC_OK;
 
     // Ensure that x can hold result
     if ( x->alloc < x->used + (n / DIGIT_BITS) + 1)
         uc_grow(x, x->used + (n / DIGIT_BITS) + 1);
 
+    /*
+     *  If n = a * DIGITS + b, we can shift by _a_ digits and then by _b_ bits, which simplifies
+     *  the algorithm.
+     */
     if ( n >= DIGIT_BITS )
     {
         uc_lshd(x, n / DIGIT_BITS);
         n %= DIGIT_BITS;
     }
 
+    /* If b = 0 we are already done */
     if ( n == 0 )
         return UC_OK;
 
@@ -601,6 +648,11 @@ int uc_lshb(uc_int *x, uc_int *y, int n)
     return UC_OK;
 }
 
+/*
+ * Compute x = (y >> n) for n >= 0
+ *
+ * I.e., shift y right by n bits and store result in x
+ */
 int uc_rshb(uc_int *x, uc_int *y, int n)
 {
     uc_copy(x, y);
@@ -682,6 +734,9 @@ int uc_rshd(uc_int *x, int y)
     x->used -= y;
 }
 
+/*
+ * Compute x = |y|
+ */
 int uc_abs(uc_int *x, uc_int *y)
 {
     int status = uc_copy(x, y);
@@ -704,11 +759,11 @@ int uc_flip_sign(uc_int *x)
 
 int uc_gcd(uc_int *z, uc_int *x, uc_int *y)
 {
-
+    // TODO
 }
 
 /*
- * Calculate GCD for two positive integers x and y.
+ * Calculate GCD for two positive integers (uc_word) x and y.
  */
 uc_word uc_gcd_word(uc_word x, uc_word y)
 {
@@ -716,7 +771,7 @@ uc_word uc_gcd_word(uc_word x, uc_word y)
 }
 
 /*
- * Calculate GCD for two positive integers with x >= y
+ * Calculate GCD for two positive integers (uc_word) with x >= y
  */
 static uc_word _uc_gcd_word(uc_word x, uc_word y)
 {
@@ -795,8 +850,6 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
         else
             return UC_INPUT_ERR;
 
-
-
         uc_add_d(&tmp, x, d);
         uc_copy(x, &tmp);
     }
@@ -807,9 +860,9 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
     if ( !uc_is_zero(x) )
         x->sign = sign;
 
-    uc_free(&tmp);
-
     uc_clamp(x);
+
+    uc_free(&tmp);
 
     return UC_OK;
 }
@@ -836,6 +889,7 @@ void debug_print(uc_int *x)
     }
     printf("]\n");
 }
+
 void debug_print_bytes(uc_int *x)
 {
     int i;
@@ -846,5 +900,5 @@ void debug_print_bytes(uc_int *x)
         else
             printf("_%02x ", x->digits[i]);
     }
-    printf("]\n");
+    printf("\n");
 }
