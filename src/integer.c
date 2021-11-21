@@ -288,7 +288,7 @@ int uc_add(uc_int *z, uc_int *x, uc_int *y)
         y = swap;
     }
 
-    assert( uc_cmp_mag(x, y) == UC_GT );
+    assert( uc_cmp_mag(x, y) != UC_LT); // Henceforth, x >= y
 
     int xs = x->sign;
     int ys = y->sign;
