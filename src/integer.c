@@ -355,6 +355,8 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
         z->used++;
     }
 
+    uc_clamp(z);
+
     return UC_OK;
 }
 
