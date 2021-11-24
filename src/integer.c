@@ -660,7 +660,7 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
      *
      * When then calculate with x' and y' and normalize r and q in the end.
      */
-    for ( k = 0; yt.digits[y->used-1] < base / 2; ++k )
+    for ( k = 0; yt.digits[yt.used-1] < base / ((uc_word)2); ++k )
     {
         uc_lshb(&tmp, &xt, 1);
         uc_copy(&xt, &tmp);
@@ -700,11 +700,11 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
     uc_init(&tb);
     uc_init(&tc);
 
-    base = 1 << DIGIT_BITS;
+    base = ((uc_digit) 1) << DIGIT_BITS;
     n = y->used;
     m = x->used - n;
 
-    assert( y->digits[n-1] >= base / 2);
+    assert( y->digits[n-1] >= base / ((uc_word) 2));
 
     uc_grow(q, m + 1); // TODO: this can maybe be smaller?
     uc_zero_out(q);
