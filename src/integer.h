@@ -31,7 +31,7 @@ typedef unsigned char uc_digit;
 typedef unsigned short uc_word;
 
 /*
-#define DIGIT_BITS      31
+#define DIGIT_BITS      31u
 typedef unsigned int    uc_digit;
 typedef unsigned long   uc_word;
  */

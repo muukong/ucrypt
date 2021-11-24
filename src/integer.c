@@ -626,21 +626,62 @@ int uc_exch (uc_int * a, uc_int * b)
     return UC_OK;
 }
 
+/*
+ * Compute r and q s.t. x = q * y + r for non-negative integers x and y.
+ */
 int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 {
-    uc_int xc, yc;
+    int k;
+    uc_word base;
+    uc_int xt, yt, tmp;
 
-    uc_init(&xc);
-    uc_init(&yc);
+    uc_init(&xt);
+    uc_init(&yt);
+    uc_init(&tmp);
 
-    uc_copy(&xc, x);
-    uc_copy(&yc, y);
+    uc_copy(&xt, x);        // x'
+    uc_copy(&yt, y);        // y'
 
-    // TODO: normalize stuff
+    base = ((uc_word) 1) << DIGIT_BITS;
 
-    _uc_div(q, r, &xc, &yc);
+    /*
+     * Normalize y' (i.e. ensure that the most significant digit of y is at least BASE // 2.
+     *
+     * More formally, find smallest k s.t. most significant digit of y' is greater or equal to BASE // 2
+     * where
+     * x' = 2^k * x
+     * y' = 2*k * y
+     *
+     * When then calculate with x' and y' and normalize r and q in the end.
+     */
+    for ( k = 0; yt.digits[y->used-1] < base / 2; ++k )
+    {
+        uc_lshb(&tmp, &xt, 1);
+        uc_copy(&xt, &tmp);
+
+        uc_lshb(&tmp, &yt, 1);
+        uc_copy(&yt, &tmp);
+    }
+
+    _uc_div(q, r, &xt, &yt);
+
+    /*
+     * Divide r by 2^k to compensate for the normalization.
+     *
+     * There is no need to change q as it is not affected by the normalization since
+     * x' // y' == (x * 2^k) // (y * 2^k) = x // y
+     */
+    uc_rshb(&tmp, r, k);
+    uc_copy(r, &tmp);
+
+    return UC_OK;
 }
 
+/*
+ * Compute r and q s.t. x = q * y + r where r < y and y is normalized (i.e., its most
+ * significant digit is at least BASE / 2.
+ */
+// TODO: implement case where y->used = 1
 static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 {
     int m, n;
