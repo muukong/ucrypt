@@ -17,6 +17,9 @@
 #define UC_INPUT_ERR        -1      // Indicates that operation was not successful
 #define UC_MEM_ERR          -2      // Insufficient memory
 
+#define UC_TRUE     1
+#define UC_FALSE    0
+
 /*
  * Each limb of a number has room for 31 bits. The following must hold true:
  * - A uc_digit can hold DIGIT_BITS + 1 bits

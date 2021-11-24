@@ -866,7 +866,7 @@ int uc_rshd(uc_int *x, int y)
 }
 
 /*
- * Compute x = |y|
+ * x = |y|
  */
 int uc_abs(uc_int *x, uc_int *y)
 {
@@ -905,18 +905,15 @@ int uc_count_bits(uc_int *x)
         return 1;
 
     int nbits = (x->used - 1) * DIGIT_BITS;
-    printf("nbits_ = %d\n", nbits);
 
     /*
      * Let the most significant digit be [d_0, d_1, ..., d_{DIGIT_BITS-1}]. We look for the largest i
      * (in descending order) s.t. d_i != 0 and then add (i+1) to the current count.
      */
-    printf("x_last = %x\n", x->digits[x->used-1]);
     for ( int i = DIGIT_BITS - 1; i >= 0; --i )
     {
         if ( x->digits[x->used-1] & (1u << i) )
         {
-            printf("i: %d\n", i);
             nbits += (i + 1);
             break;
         }
