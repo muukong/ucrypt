@@ -635,6 +635,12 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
     uc_word base;
     uc_int xt, yt, tmp;
 
+    /*
+     * Bad things happen if we divide by zero.
+     */
+    if ( uc_is_zero(y) )
+        return UC_INPUT_ERR;
+
     uc_init(&xt);
     uc_init(&yt);
     uc_init(&tmp);
@@ -678,8 +684,9 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 }
 
 /*
- * Compute r and q s.t. x = q * y + r where r < y and y is normalized (i.e., its most
- * significant digit is at least BASE / 2.
+ * Compute r and q s.t. x = q * y + r where r < y. The following preconditions must be met:
+ * - y is normalized (i.e., its most significant digit is at least BASE / 2)
+ * - y contains at least two digits.
  */
 // TODO: implement case where y->used = 1
 static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
