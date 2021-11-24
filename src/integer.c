@@ -115,8 +115,8 @@ int uc_init_from_long(uc_int *x, long n)
     uc_digit d = 0;
     for ( int i = 0; n > 0; ++i, n >>= 1 )
     {
-        d += (n & 1) << (i % DIGIT_BITS);
-        if ( (i + 1) % DIGIT_BITS == 0 )
+        d += (n & 1) << (i % UC_DIGIT_BITS);
+        if ((i + 1) % UC_DIGIT_BITS == 0 )
         {
             x->digits[digit_ctr++] = d;
             x->used++;
@@ -153,8 +153,8 @@ int uc_init_from_digit(uc_int *x, uc_digit n)
     uc_digit d = 0;
     for ( int i = 0; n > 0; ++i, n >>= 1 )
     {
-        d += (n & 1) << (i % DIGIT_BITS);
-        if ( (i + 1) % DIGIT_BITS == 0 )
+        d += (n & 1) << (i % UC_DIGIT_BITS);
+        if ((i + 1) % UC_DIGIT_BITS == 0 )
         {
             x->digits[digit_ctr++] = d;
             x->used++;
@@ -206,16 +206,16 @@ int uc_clamp(uc_int *x)
 int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes)
 {
     uc_init(x);
-    uc_grow(x, (nbytes * 8) / DIGIT_BITS + 1);
+    uc_grow(x, (nbytes * 8) / UC_DIGIT_BITS + 1);
 
     int digit_ctr = 0;
     uc_digit d = 0;
     for ( int i = 0; i < 8 * nbytes; ++i ) // iterate bit-wise over _bytes_
     {
         int b_i = (bytes[i/8] >> (i%8)) & 1;
-        d += (b_i << (i % DIGIT_BITS));
+        d += (b_i << (i % UC_DIGIT_BITS));
 
-        if ( (i + 1) % DIGIT_BITS == 0 ) // we have filled up a uc_digit (with DIGIT_BITS bits)
+        if ((i + 1) % UC_DIGIT_BITS == 0 ) // we have filled up a uc_digit (with UC_DIGIT_BITS bits)
         {
             x->digits[digit_ctr++] = d;
             x->used++;
@@ -405,7 +405,7 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
     for ( i = 0; i < y->used; ++i )
     {
         uc_digit tmp = x->digits[i] + y->digits[i] + c;
-        c = tmp >> DIGIT_BITS;
+        c = tmp >> UC_DIGIT_BITS;
         z->digits[i] = tmp & UC_DIGIT_MASK;
         z->used++;
     }
@@ -413,7 +413,7 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
     for ( ; i < x->used; ++i )
     {
         uc_digit tmp = x->digits[i] + c;
-        c = tmp >> DIGIT_BITS;
+        c = tmp >> UC_DIGIT_BITS;
         z->digits[i] = tmp & UC_DIGIT_MASK;
         z->used++;
     }
@@ -576,7 +576,7 @@ static int _uc_mul(uc_int *z, uc_int *x, uc_int *y)
                           ((uc_word) c);
 
             z->digits[i + j] = tmp & UC_DIGIT_MASK;
-            c = tmp >> DIGIT_BITS;
+            c = tmp >> UC_DIGIT_BITS;
         }
 
         z->digits[i + n] = c;
@@ -632,7 +632,6 @@ int uc_exch (uc_int * a, uc_int * b)
 int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 {
     int k;
-    uc_word base;
     uc_int xt, yt, tmp;
 
     /*
@@ -648,8 +647,6 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
     uc_copy(&xt, x);        // x'
     uc_copy(&yt, y);        // y'
 
-    base = ((uc_word) 1) << DIGIT_BITS;
-
     /*
      * Normalize y' (i.e. ensure that the most significant digit of y is at least BASE // 2.
      *
@@ -660,7 +657,7 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
      *
      * When then calculate with x' and y' and normalize r and q in the end.
      */
-    for ( k = 0; yt.digits[yt.used-1] < base / ((uc_word)2); ++k )
+    for ( k = 0; yt.digits[yt.used-1] < UC_INT_BASE / ((uc_word)2); ++k )
     {
         uc_lshb(&tmp, &xt, 1);
         uc_copy(&xt, &tmp);
@@ -693,18 +690,17 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 {
     int m, n;
     int i, j;
-    uc_word base, q_estimate;
+    uc_word q_estimate;
     uc_int ta, tb, tc;
 
     uc_init(&ta);
     uc_init(&tb);
     uc_init(&tc);
 
-    base = ((uc_digit) 1) << DIGIT_BITS;
     n = y->used;
     m = x->used - n;
 
-    assert( y->digits[n-1] >= base / ((uc_word) 2));
+    assert( y->digits[n-1] >= UC_INT_BASE / ((uc_word) 2));
 
     uc_grow(q, m + 1); // TODO: this can maybe be smaller?
     uc_zero_out(q);
@@ -732,9 +728,9 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
         /*
          * Quotient estimation
          */
-        q_estimate = ( ((uc_word) x->digits[n+j] * base) + ((uc_word) x->digits[n+j-1]) ) / y->digits[n-1];
-        if ( q_estimate > (base - 1) )
-            q_estimate = base - 1;
+        q_estimate = ( ((uc_word) x->digits[n+j] * UC_INT_BASE) + ((uc_word) x->digits[n+j-1]) ) / y->digits[n-1];
+        if ( q_estimate > (UC_INT_BASE - 1) )
+            q_estimate = UC_INT_BASE - 1;
         q->digits[j] = q_estimate;
 
         /*
@@ -792,17 +788,17 @@ int uc_lshb(uc_int *x, uc_int *y, int n)
         return UC_OK;
 
     // Ensure that x can hold result
-    if ( x->alloc < x->used + (n / DIGIT_BITS) + 1)
-        uc_grow(x, x->used + (n / DIGIT_BITS) + 1);
+    if ( x->alloc < x->used + (n / UC_DIGIT_BITS) + 1)
+        uc_grow(x, x->used + (n / UC_DIGIT_BITS) + 1);
 
     /*
      *  If n = a * DIGITS + b, we can shift by _a_ digits and then by _b_ bits, which simplifies
      *  the algorithm.
      */
-    if ( n >= DIGIT_BITS )
+    if (n >= UC_DIGIT_BITS )
     {
-        uc_lshd(x, n / DIGIT_BITS);
-        n %= DIGIT_BITS;
+        uc_lshd(x, n / UC_DIGIT_BITS);
+        n %= UC_DIGIT_BITS;
     }
 
     /* If b = 0 we are already done */
@@ -811,7 +807,7 @@ int uc_lshb(uc_int *x, uc_int *y, int n)
 
     for ( int i = x->used - 1; i >= 0; --i )
     {
-        uc_digit shift = DIGIT_BITS - n;
+        uc_digit shift = UC_DIGIT_BITS - n;
 
         uc_digit mask = (((uc_digit)1u) << n) - 1;
 
@@ -845,10 +841,10 @@ int uc_rshb(uc_int *x, uc_int *y, int n)
      *  If n = a * DIGITS + b, we can shift by _a_ digits and then by _b_ bits, which simplifies
      *  the algorithm.
      */
-    if ( n >= DIGIT_BITS )
+    if (n >= UC_DIGIT_BITS )
     {
-        uc_rshd(x, n / DIGIT_BITS);
-        n %= DIGIT_BITS;
+        uc_rshd(x, n / UC_DIGIT_BITS);
+        n %= UC_DIGIT_BITS;
     }
 
     /* If b = 0 we are already done */
@@ -860,7 +856,7 @@ int uc_rshb(uc_int *x, uc_int *y, int n)
     for ( int i = x->used - 1; i >= 0; --i )
     {
         uc_digit rr = x->digits[i] & mask;
-        x->digits[i] = (x->digits[i] >> n) | (r << (DIGIT_BITS - n));
+        x->digits[i] = (x->digits[i] >> n) | (r << (UC_DIGIT_BITS - n));
         r = rr;
     }
 
@@ -952,13 +948,13 @@ int uc_count_bits(uc_int *x)
     if (uc_is_zero(x) )
         return 1;
 
-    int nbits = (x->used - 1) * DIGIT_BITS;
+    int nbits = (x->used - 1) * UC_DIGIT_BITS;
 
     /*
-     * Let the most significant digit be [d_0, d_1, ..., d_{DIGIT_BITS-1}]. We look for the largest i
+     * Let the most significant digit be [d_0, d_1, ..., d_{UC_DIGIT_BITS-1}]. We look for the largest i
      * (in descending order) s.t. d_i != 0 and then add (i+1) to the current count.
      */
-    for ( int i = DIGIT_BITS - 1; i >= 0; --i )
+    for (int i = UC_DIGIT_BITS - 1; i >= 0; --i )
     {
         if ( x->digits[x->used-1] & (1u << i) )
         {
@@ -1026,7 +1022,7 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
     /* Initialize x with zero and ensure that we have enough room
      */
     uc_zero_out(x);
-    uc_grow(x, (strlen(y) * radix) / DIGIT_BITS + 1);
+    uc_grow(x, (strlen(y) * radix) / UC_DIGIT_BITS + 1);
 
     /*
      * Extract the sign and store it. Since at this point x is zero we cannot assign

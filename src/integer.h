@@ -2,19 +2,21 @@
 #define UCRYPT_INTEGER_H
 
 /*
- * Each limb of a number has room for DIGIT_BITS bits. The following must hold true:
- * - A uc_digit can hold DIGIT_BITS + 1 bits
- * - A uc_word can hold 2 * DIGIT_BITS + 1 bits
+ * Each limb of a number has room for UC_DIGIT_BITS bits. The following must hold true:
+ * - A uc_digit can hold UC_DIGIT_BITS + 1 bits
+ * - A uc_word can hold 2 * UC_DIGIT_BITS + 1 bits
  */
 
-#define DIGIT_BITS      7u
 typedef unsigned char uc_digit;
 typedef unsigned short uc_word;
+#define UC_DIGIT_BITS   7u
+#define UC_INT_BASE     (((uc_word) 1) << UC_DIGIT_BITS)
 
 /*
-#define DIGIT_BITS      31u
 typedef unsigned int    uc_digit;
 typedef unsigned long   uc_word;
+#define UC_DIGIT_BITS      31u
+#define UC_INT_BASE     (((uc_word) 1) << UC_DIGIT_BITS)
  */
 
 /*
@@ -40,7 +42,7 @@ typedef struct
 #define UC_EQ 0
 #define UC_GT 1
 
-#define UC_DIGIT_MASK ((uc_digit) ~(((uc_digit) ~0) << DIGIT_BITS))
+#define UC_DIGIT_MASK ((uc_digit) ~(((uc_digit) ~0) << UC_DIGIT_BITS))
 
 #define UC_OK               1       // Indicates that operation was successful
 #define UC_INPUT_ERR        -1      // Indicates that operation was not successful
