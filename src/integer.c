@@ -139,7 +139,7 @@ int uc_init_from_long(uc_int *x, long n)
 int uc_init_from_digit(uc_int *x, uc_digit n)
 {
     uc_init(x);
-    uc_grow(x, sizeof(n) / sizeof(uc_digit) + 1);
+    uc_grow(x, sizeof(n) / sizeof(uc_digit) + 2);
 
     if ( n < 0 )
     {
