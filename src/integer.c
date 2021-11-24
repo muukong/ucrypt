@@ -615,17 +615,118 @@ int uc_mul_2(uc_int *x, uc_int *y)
     return status;
 }
 
+// TODO: add to header file
+int uc_exch (uc_int * a, uc_int * b)
+{
+    uc_int  t;
+
+    t  = *a;
+    *a = *b;
+    *b = t;
+    return UC_OK;
+}
+
 int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 {
+    uc_int xc, yc;
 
+    uc_init(&xc);
+    uc_init(&yc);
+
+    uc_copy(&xc, x);
+    uc_copy(&yc, y);
+
+    // TODO: normalize stuff
+
+    _uc_div(q, r, &xc, &yc);
+}
+
+static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
+{
+    int m, n;
+    int i, j;
+    uc_word base, q_estimate;
+    uc_int ta, tb, tc;
+
+    uc_init(&ta);
+    uc_init(&tb);
+    uc_init(&tc);
+
+    base = 1 << DIGIT_BITS;
+    n = y->used;
+    m = x->used - n;
+
+    assert( y->digits[n-1] >= base / 2);
+
+    uc_grow(q, m + 1); // TODO: this can maybe be smaller?
+    uc_zero_out(q);
+    q->used = q->alloc; // TODO: is this necessary?
+
+    /*
+     * Step 1
+     */
+    /* ta = base^m * y */
+    uc_copy(&ta, y);
+    uc_lshd(&ta, m);
+
+    if ( uc_gte(x, &ta) )
+    {
+        q->digits[m] = 1;
+        uc_sub(&tb, x, &ta);
+        uc_copy(x, &tb);
+    }
+
+    /*
+     * Steps 2 - 8
+     */
+    for ( j = m - 1; j >= 0; --j )
+    {
+        /*
+         * Quotient estimation
+         */
+        q_estimate = ( ((uc_word) x->digits[n+j] * base) + ((uc_word) x->digits[n+j-1]) ) / y->digits[n-1];
+        if ( q_estimate > (base - 1) )
+            q_estimate = base - 1;
+        q->digits[j] = q_estimate;
+
+        /*
+         * x = x - q_estimate * (base ^ j) * y
+         */
+
+        uc_mul_d(&ta, y, q_estimate);   // ta = y * q_estimate
+        uc_lshd(&ta, j);                // ta = ta * (base ^ j)
+        uc_sub(&tb, x, &ta);
+        uc_copy(x, &tb);
+
+        uc_zero_out(&ta);
+        while ( uc_lt(x, &ta) )
+        {
+            q->digits[j]--;
+            uc_copy(&tb, y);
+            uc_lshd(&tb, j);
+            uc_add(&tc, x, &tb);
+
+            uc_copy(x, &tc);
+        }
+    }
+
+    uc_copy(r, x);
+
+    uc_clamp(r);
+    uc_clamp(q);
+
+    return UC_OK;
 }
 
 /*
- * Compute q and r s.t. x = q * y + r with r < y for x >= 0 and y > 0
+ * Compute x = y // 2, i.e.:
+ *   y is even ==> x = y / 2
+ *   y odd ==> x = (y - 1) / 2
  */
-static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
+int uc_div_2(uc_int *x, uc_int *y)
 {
-
+    /* Division by two is equivalent to a left shift by one bit */
+    return uc_rshb(x, y, 1);
 }
 
 /*
