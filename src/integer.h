@@ -2,26 +2,7 @@
 #define UCRYPT_INTEGER_H
 
 /*
- * Constants
- */
-#define UC_NEG 1
-#define UC_POS 0
-
-#define UC_LT -1
-#define UC_EQ 0
-#define UC_GT 1
-
-#define UC_DIGIT_MASK ((uc_digit) ~(((uc_digit) ~0) << DIGIT_BITS))
-
-#define UC_OK               1       // Indicates that operation was successful
-#define UC_INPUT_ERR        -1      // Indicates that operation was not successful
-#define UC_MEM_ERR          -2      // Insufficient memory
-
-#define UC_TRUE     1
-#define UC_FALSE    0
-
-/*
- * Each limb of a number has room for 31 bits. The following must hold true:
+ * Each limb of a number has room for DIGIT_BITS bits. The following must hold true:
  * - A uc_digit can hold DIGIT_BITS + 1 bits
  * - A uc_word can hold 2 * DIGIT_BITS + 1 bits
  */
@@ -48,6 +29,25 @@ typedef struct
     int alloc;          // number of digits that are allocated (i.e., length of _digits_)
     int sign;           // UC_NEG or UC_POS
 } uc_int;
+
+/*
+ * Constants
+ */
+#define UC_NEG 1
+#define UC_POS 0
+
+#define UC_LT -1
+#define UC_EQ 0
+#define UC_GT 1
+
+#define UC_DIGIT_MASK ((uc_digit) ~(((uc_digit) ~0) << DIGIT_BITS))
+
+#define UC_OK               1       // Indicates that operation was successful
+#define UC_INPUT_ERR        -1      // Indicates that operation was not successful
+#define UC_MEM_ERR          -2      // Insufficient memory
+
+#define UC_TRUE     1
+#define UC_FALSE    0
 
 /*
  * Basic operations
