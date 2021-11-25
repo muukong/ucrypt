@@ -461,7 +461,7 @@ int uc_sub(uc_int *z, uc_int *x, uc_int *y)
         flip_sign = 1;
     }
 
-    assert( uc_cmp_mag(x, y) == UC_GT );
+    assert( uc_cmp_mag(x, y) != UC_LT );
 
     int xs = x->sign;
     int ys = y->sign;
