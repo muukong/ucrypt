@@ -95,10 +95,7 @@ int uc_init_multi(uc_int *x0, uc_int *x1, uc_int *x2, uc_int *x3, uc_int *x4, uc
 int uc_init_zero(uc_int *x)
 {
     uc_init(x);
-    uc_grow(x, 1);
-    uc_zero_out(x);
-
-    return UC_OK;
+    return uc_set_zero(x);
 }
 
 /*
@@ -149,53 +146,25 @@ int uc_grow(uc_int *x, int n)
 /*
  * Initialize UC integer x with built-in int n.
  */
-int uc_init_from_int(uc_int *x, int n)
+int uc_init_i(uc_int *x, int n)
 {
-    return uc_init_from_long(x, n);
+    uc_init(x);
+    return uc_set_i(x, n);
 }
 
 /*
  * Initialize UC integer x with built-in long n.
  */
-int uc_init_from_long(uc_int *x, long n)
+int uc_init_l(uc_int *x, long n)
 {
     uc_init(x);
-    uc_grow(x, sizeof(n) / sizeof(uc_digit) + 1);
-
-    if ( n < 0 )
-    {
-        x->sign = UC_NEG;
-        n *= -1; // TODO: can this overflow?
-    }
-    else
-        x->sign = UC_POS;
-
-    int digit_ctr = 0;
-    uc_digit d = 0;
-    for ( int i = 0; n > 0; ++i, n >>= 1 )
-    {
-        d += (n & 1) << (i % UC_DIGIT_BITS);
-        if ((i + 1) % UC_DIGIT_BITS == 0 )
-        {
-            x->digits[digit_ctr++] = d;
-            x->used++;
-            d = 0;
-        }
-    }
-
-    // Add final digit
-    x->digits[digit_ctr] = d;
-    x->used++;
-
-    uc_clamp(x);
-
-    return UC_OK;
+    return uc_set_l(x, n);
 }
 
 /*
  * Initialize UC integer x with digit n.
  */
-int uc_init_from_digit(uc_int *x, uc_digit n)
+int uc_init_d(uc_int *x, uc_digit n)
 {
     uc_init(x);
     uc_grow(x, sizeof(n) / sizeof(uc_digit) + 2);
@@ -230,6 +199,12 @@ int uc_init_from_digit(uc_int *x, uc_digit n)
     return UC_OK;
 }
 
+int uc_init_w(uc_int *x, uc_word n)
+{
+    uc_init(x);
+    return uc_set_w(x, n);
+}
+
 /*
  * For any non-zero number, make sure that x->digits[x->used-1] is a non-zero digit. If
  * x is zero, we set x->used to 1.
@@ -259,22 +234,91 @@ int uc_clamp(uc_int *x)
     return UC_OK;
 }
 
+
 /*
- * Convert byte-encoded integer _bytes_ (big-endian) of length _nbytes_ to integer
+ * Assign zero to x (i.e. x := 0)
  */
-int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes)
+int uc_set_zero(uc_int *x)
 {
-    uc_init(x);
-    uc_grow(x, (nbytes * 8) / UC_DIGIT_BITS + 1);
+    if ( x->digits == NULL )
+        uc_grow(x, 1);
+
+    for ( int i = 0; i < x->used; ++i )
+        x->digits[i] = 0;
+    x->used = 1;
+    x->sign = UC_POS;
+
+    return UC_OK;
+}
+
+/*
+ * Assign n to x
+ */
+int uc_set_i(uc_int *x, int n)
+{
+    uc_set_l(x, n);
+}
+
+/*
+ * Assign n to x
+ */
+int uc_set_l(uc_int *x, long n)
+{
+    uc_grow(x, sizeof(n) / sizeof(uc_digit) + 1);
+
+    if ( n < 0 )
+    {
+        x->sign = UC_NEG;
+        n *= -1; // TODO: can this overflow?
+    }
+    else
+        x->sign = UC_POS;
 
     int digit_ctr = 0;
     uc_digit d = 0;
-    for ( int i = 0; i < 8 * nbytes; ++i ) // iterate bit-wise over _bytes_
+    for ( int i = 0; n > 0; ++i, n >>= 1 )
     {
-        int b_i = (bytes[i/8] >> (i%8)) & 1;
-        d += (b_i << (i % UC_DIGIT_BITS));
+        d += (n & 1) << (i % UC_DIGIT_BITS);
+        if ((i + 1) % UC_DIGIT_BITS == 0 )
+        {
+            x->digits[digit_ctr++] = d;
+            x->used++;
+            d = 0;
+        }
+    }
 
-        if ((i + 1) % UC_DIGIT_BITS == 0 ) // we have filled up a uc_digit (with UC_DIGIT_BITS bits)
+    // Add final digit
+    x->digits[digit_ctr] = d;
+    x->used++;
+
+    uc_clamp(x);
+
+    return UC_OK;
+}
+
+int uc_set_d(uc_int *x, uc_digit n)
+{
+    uc_set_w(x, n);
+}
+
+int uc_set_w(uc_int *x, uc_word n)
+{
+    uc_grow(x, sizeof(n) / sizeof(uc_word) + 2);
+
+    if ( n < 0 )
+    {
+        x->sign = UC_NEG;
+        n *= -1; // TODO: can this overflow?
+    }
+    else
+        x->sign = UC_POS;
+
+    int digit_ctr = 0;
+    uc_digit d = 0;
+    for ( int i = 0; n > 0; ++i, n >>= 1 )
+    {
+        d += (n & 1) << (i % UC_DIGIT_BITS);
+        if ((i + 1) % UC_DIGIT_BITS == 0 )
         {
             x->digits[digit_ctr++] = d;
             x->used++;
@@ -292,27 +336,11 @@ int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes)
 }
 
 /*
- * Assign zero to x (i.e. x := 0)
- */
-int uc_zero_out(uc_int *x)
-{
-    if ( x->digits == NULL )
-        uc_grow(x, 1);
-
-    for ( int i = 0; i < x->used; ++i )
-        x->digits[i] = 0;
-    x->used = 1;
-    x->sign = UC_POS;
-
-    return UC_OK;
-}
-
-/*
  * Copy y to x (i.e. x := y)
  */
 int uc_copy(uc_int *x, uc_int *y)
 {
-    uc_zero_out(x);
+    uc_set_zero(x);
 
     if ( y->used > x->used )
         uc_grow(x, y->used);
@@ -332,7 +360,7 @@ int uc_copy(uc_int *x, uc_int *y)
  */
 int uc_free(uc_int *x)
 {
-    uc_zero_out(x);
+    uc_set_zero(x);
     XFREE(x->digits);
     x->digits = NULL;
     x->used = 0;
@@ -455,7 +483,7 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
     assert(uc_cmp_mag(x, y) != UC_LT);
 
     /* Ensure that z is initialized with 0 and that there is enough space to hold the result */
-    uc_zero_out(z);
+    uc_set_zero(z);
     uc_grow(z, x->used + 1);
     z->used = z->used + 1;
 
@@ -494,7 +522,7 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
 int uc_add_d(uc_int *z, uc_int *x, uc_digit d)
 {
     uc_int y;
-    uc_init_from_digit(&y, d);
+    uc_init_d(&y, d);
     int status = uc_add(z, x, &y);
     uc_free(&y);
     return status;
@@ -565,7 +593,7 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
     assert(uc_cmp_mag(x, y) != UC_LT);
 
     /* Ensure that z is initialized with 0 and that there is enough space to hold the result */
-    uc_zero_out(z);
+    uc_set_zero(z);
     uc_grow(z, x->used + 1);
     z->used = x->used + 1;
 
@@ -619,7 +647,7 @@ static int _uc_mul(uc_int *z, uc_int *x, uc_int *y)
     int m = y->used;
 
     /* Allocate enough space, zero out memory, and set minimum number of digits */
-    uc_zero_out(z);
+    uc_set_zero(z);
     uc_grow(z, n + m + 2);
     z->used = n + m + 2;  // Let's be generous - we can clamp at the end
 
@@ -654,7 +682,7 @@ static int _uc_mul(uc_int *z, uc_int *x, uc_int *y)
 int uc_mul_d(uc_int *z, uc_int *x, uc_digit d)
 {
     uc_int tmp;
-    uc_init_from_digit(&tmp, d);
+    uc_init_d(&tmp, d);
     int status = uc_mul(z, x, &tmp);
     uc_free(&tmp);
     return status;
@@ -668,7 +696,7 @@ int uc_mul_d(uc_int *z, uc_int *x, uc_digit d)
 int uc_mul_2(uc_int *x, uc_int *y)
 {
     uc_int tmp;
-    int status = uc_init_from_int(&tmp, 2);
+    int status = uc_init_i(&tmp, 2);
     uc_mul(x, y, &tmp);
     uc_free(&tmp);
     return status;
@@ -704,7 +732,7 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
      */
     if ( uc_lt(x, y) )
     {
-        uc_zero_out(q);
+        uc_set_zero(q);
         uc_copy(r, x);
         return UC_OK;
     }
@@ -715,8 +743,8 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
      */
     if ( uc_eq(x, y) )
     {
-        uc_init_from_int(q, 1);
-        uc_zero_out(q);
+        uc_init_i(q, 1);
+        uc_set_zero(r);
         return UC_OK;
     }
 
@@ -783,7 +811,7 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
     assert( y->digits[n-1] >= UC_INT_BASE / ((uc_word) 2));
 
     uc_grow(q, m + 1); // TODO: this can maybe be smaller?
-    uc_zero_out(q);
+    uc_set_zero(q);
     q->used = q->alloc; // TODO: is this necessary?
 
     /*
@@ -822,7 +850,7 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
         uc_sub(&tb, x, &ta);
         uc_copy(x, &tb);
 
-        uc_zero_out(&ta);
+        uc_set_zero(&ta);
         while ( uc_lt(x, &ta) )
         {
             q->digits[j]--;
@@ -1167,7 +1195,7 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
     /*
     /* Initialize x with zero and ensure that we have enough room
      */
-    uc_zero_out(x);
+    uc_set_zero(x);
     uc_grow(x, (strlen(y) * radix) / UC_DIGIT_BITS + 1);
 
     /*
@@ -1255,7 +1283,7 @@ int uc_write_radix(char *y, int n, uc_int *x, int radix)
     digit_ctr = 0;
 
     uc_copy(&xt, x);
-    uc_init_from_int(&rad, radix);
+    uc_init_i(&rad, radix);
 
     /*
      * If xt is negative, we remember to add a negative sign in the beginning and
@@ -1323,8 +1351,8 @@ int uc_write_radix_len(uc_int *x, int r)
     if ( uc_is_neg(x) )
         ++len; /* one more character for the negative sign '-' */
 
-    uc_init_from_int(&rt, r);
-    uc_init_from_int(&tmp, r);
+    uc_init_i(&rt, r);
+    uc_init_i(&tmp, r);
     while ( uc_cmp_mag(&tmp, x) == UC_LT )
     {
         ++len;
@@ -1339,6 +1367,38 @@ int uc_write_radix_len(uc_int *x, int r)
     uc_free(&tmp2);
 
     return len;
+}
+
+/*
+ * Convert byte-encoded integer _bytes_ (big-endian) of length _nbytes_ to integer
+ */
+int uc_read_bytes(uc_int *x, unsigned char *bytes, int nbytes)
+{
+    uc_init(x);
+    uc_grow(x, (nbytes * 8) / UC_DIGIT_BITS + 1);
+
+    int digit_ctr = 0;
+    uc_digit d = 0;
+    for ( int i = 0; i < 8 * nbytes; ++i ) // iterate bit-wise over _bytes_
+    {
+        int b_i = (bytes[i/8] >> (i%8)) & 1;
+        d += (b_i << (i % UC_DIGIT_BITS));
+
+        if ((i + 1) % UC_DIGIT_BITS == 0 ) // we have filled up a uc_digit (with UC_DIGIT_BITS bits)
+        {
+            x->digits[digit_ctr++] = d;
+            x->used++;
+            d = 0;
+        }
+    }
+
+    // Add final digit
+    x->digits[digit_ctr] = d;
+    x->used++;
+
+    uc_clamp(x);
+
+    return UC_OK;
 }
 
 /*

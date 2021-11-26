@@ -58,12 +58,16 @@ typedef struct
 int uc_init(uc_int *x);
 int uc_init_multi(uc_int *x0, uc_int *x1, uc_int *x2, uc_int *x3, uc_int *x4, uc_int *x5);
 int uc_init_zero(uc_int *x);
-int uc_init_from_int(uc_int *x, int n);
-int uc_init_from_long(uc_int *x, long n);
-int uc_init_from_digit(uc_int *x, uc_digit);
-int uc_init_from_bytes(uc_int *x, unsigned char *bytes, int nbytes);
+int uc_init_i(uc_int *x, int n);
+int uc_init_l(uc_int *x, long n);
+int uc_init_d(uc_int *x, uc_digit n);
+int uc_init_w(uc_int *x, uc_word n);
 
-int uc_zero_out(uc_int *x);
+int uc_set_zero(uc_int *x);
+int uc_set_i(uc_int *x, int n);
+int uc_set_l(uc_int *x, long n);
+int uc_set_d(uc_int *x, uc_digit n);
+int uc_set_w(uc_int *x, uc_word n);
 int uc_copy(uc_int *x, uc_int *y);
 
 int uc_grow(uc_int *x, int n);
@@ -145,9 +149,13 @@ uc_word uc_gcd_word(uc_word x, uc_word y);
  * Conversion
  */
 
+/* Read and write to and from string */
 int uc_read_radix(uc_int *x, const char *y, int radix);
 int uc_write_radix(char *y, int n, uc_int *x, int radix);
 int uc_write_radix_len(uc_int *x, int radix);
+
+/* Read raw bytes */
+int uc_read_bytes(uc_int *x, unsigned char *bytes, int nbytes);
 
 /*
  * Miscellaneous / Debug
