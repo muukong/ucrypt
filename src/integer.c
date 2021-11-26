@@ -1235,10 +1235,10 @@ void uc_debug_print_int(uc_int *x)
     int i;
 
     printf("UC Integer:\n");
-    printf("Used  = %d\n", x->used);
-    printf("Alloc = %d\n", x->alloc);
-    printf("Sign = %d\n", x->sign);
-    printf("Digits: [");
+    printf("  Used  = %d\n", x->used);
+    printf("  Alloc = %d\n", x->alloc);
+    printf("  Sign = %d\n", x->sign);
+    printf("  [");
     for ( i = 0; i < x->alloc; ++i )
     {
         if ( i < x->used )
@@ -1252,6 +1252,7 @@ void uc_debug_print_int(uc_int *x)
 void uc_debug_print_int_bytes(uc_int *x)
 {
     int i;
+    printf("[");
     for ( i = 0; i < x->alloc; ++i )
     {
         if ( i < x->used )
@@ -1259,6 +1260,7 @@ void uc_debug_print_int_bytes(uc_int *x)
         else
             printf("_%02x ", x->digits[i]);
     }
+    printf("]");
     printf("\n");
 }
 
