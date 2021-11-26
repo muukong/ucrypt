@@ -56,6 +56,7 @@ typedef struct
  */
 
 int uc_init(uc_int *x);
+int uc_init_multi(uc_int *x0, uc_int *x1, uc_int *x2, uc_int *x3, uc_int *x4, uc_int *x5);
 int uc_init_zero(uc_int *x);
 int uc_init_from_int(uc_int *x, int n);
 int uc_init_from_long(uc_int *x, long n);

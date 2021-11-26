@@ -35,6 +35,63 @@ int uc_init(uc_int *x)
     return UC_OK;
 }
 
+/*
+ * Initializes multiple UC integers. If fewer integers need to be initialized, the spare
+ * parameters on the right can be set to NULL and won't be initialized (e.g.
+ * uc_init_multi(&a, &b, &c, NULL, NULL, NULL));
+ */
+int uc_init_multi(uc_int *x0, uc_int *x1, uc_int *x2, uc_int *x3, uc_int *x4, uc_int *x5)
+{
+    int ret;
+
+    ret = UC_OK;
+
+    if ( x0 && ((ret = uc_init(x0)) != UC_OK) )
+        return ret;
+
+    if ( x1 && ((ret = uc_init(x1)) != UC_OK) )
+    {
+        uc_free(x0);
+        return ret;
+    }
+
+    if ( x2 && ((ret = uc_init(x2)) != UC_OK) )
+    {
+        uc_free(x0);
+        uc_free(x1);
+        return ret;
+    }
+
+    if ( x3 && ((ret = uc_init(x3)) != UC_OK) )
+    {
+        uc_free(x0);
+        uc_free(x1);
+        uc_free(x2);
+        return ret;
+    }
+
+    if ( x4 && ((ret = uc_init(x4)) != UC_OK) )
+    {
+        uc_free(x0);
+        uc_free(x1);
+        uc_free(x2);
+        uc_free(x3);
+        return ret;
+    }
+
+    if ( x5 && ((ret = uc_init(x5)) != UC_OK) )
+    {
+        uc_free(x0);
+        uc_free(x1);
+        uc_free(x2);
+        uc_free(x3);
+        uc_free(x4);
+        return ret;
+    }
+
+    return ret;
+}
+
 int uc_init_zero(uc_int *x)
 {
     uc_init(x);
