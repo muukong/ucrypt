@@ -77,12 +77,21 @@ int uc_free(uc_int *x);
 int uc_cmp(uc_int *x, uc_int *y);
 int uc_cmp_mag(uc_int *x, uc_int *y);
 
+/* Signed comparisons */
 #define uc_eq(x, y) (uc_cmp((x),(y)) == UC_EQ)      // ==
 #define uc_neq(x, y) (uc_cmp((x),(y)) != UC_EQ)     // !=
 #define uc_lt(x, y) (uc_cmp((x),(y)) == UC_LT)      // <
 #define uc_lte(x, y) (uc_cmp((x),(y)) != UC_GT)     // <=
 #define uc_gt(x, y) (uc_cmp((x),(y)) == UC_GT)      // >
 #define uc_gte(x, y) (uc_cmp((x),(y)) != UC_LT)     // >=
+
+/* Magnitude (i.e., unsigned) comparisons */
+#define uc_eq_mag(x, y) (uc_cmp_mag((x),(y)) == UC_EQ)          // ==
+#define uc_neq_mag(x, y) (uc_cmp_mag((x),(y)) != UC_EQ)         // !=
+#define uc_lt_mag(x, y) (uc_cmp_mag((x),(y)) == UC_LT)          // <
+#define uc_lte_mag(x, y) (uc_cmp_mag((x),(y)) != UC_GT)         // <=
+#define uc_gt_mag(x, y) (uc_cmp_mag((x),(y)) == UC_GT)          // >
+#define uc_gte_mag(x, y) (uc_cmp_mag((x),(y)) != UC_LT)         // >=
 
 #define uc_is_zero(x) ((x)->used == 1 && (x)->digits[0] == 0)
 #define uc_is_pos(x) ((x)->sign == UC_POS && !uc_is_zero(x))
