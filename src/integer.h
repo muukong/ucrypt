@@ -128,6 +128,8 @@ uc_word uc_gcd_word(uc_word x, uc_word y);
  */
 
 int uc_read_radix(uc_int *x, const char *y, int radix);
+int uc_write_radix(char *y, int n, uc_int *x, int radix);
+int uc_write_radix_len(uc_int *x, int radix);
 
 /*
  * Miscellaneous / Debug
