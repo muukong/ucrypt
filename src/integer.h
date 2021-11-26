@@ -101,7 +101,7 @@ int uc_cmp_mag(uc_int *x, uc_int *y);
 #define uc_is_even(x) (!uc_is_odd(x))
 
 /*
- * Arithmetic operations
+ * Integer arithmetic
  */
 
 int uc_add(uc_int *z, uc_int *x, uc_int *y);
@@ -125,6 +125,14 @@ int uc_flip_sign(uc_int *x);
 int uc_count_bits(uc_int *x);
 
 int uc_gc(uc_int *z, uc_int *x, uc_int *y);
+
+/*
+ * Modular arithmetic
+ */
+
+int uc_add_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
+
+int uc_mod(uc_int *x, uc_int *y, uc_int *m);
 
 /*
  * Arithmetic algorithms

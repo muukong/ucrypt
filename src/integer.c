@@ -1046,6 +1046,64 @@ int uc_count_bits(uc_int *x)
     return nbits;
 }
 
+/*
+ * Modular artithmetic
+ */
+
+/*
+ * Compute z = (x + y) (mod m) for 0 <= x,y < m
+ */
+int uc_add_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
+{
+    uc_int tmp;
+
+    uc_init(&tmp);
+
+    /* check that 0 <= x < m */
+    if (uc_is_neg(x) || !uc_lt(x, m) )
+        return UC_INPUT_ERR;
+
+    /* check that 0 <= y < m */
+    if (uc_is_neg(y) || !uc_lt(y, m) )
+        return UC_INPUT_ERR;
+
+    /* At this point we implicitly know that m > 0 */
+
+    uc_add(z, x, y);
+    if ( uc_gte(z, m) )
+    {
+        uc_sub(&tmp, z, m);
+        uc_copy(z, &tmp);
+    }
+
+    return UC_OK;
+}
+
+/*
+ * Compute x = y (mod m) for y >= 0 and m > 0
+ */
+int uc_mod(uc_int *x, uc_int *y, uc_int *m)
+{
+    uc_int q, r;
+
+    /* Check that y >= 0 and m > 0 */
+    if ( uc_is_neg(y) || !uc_is_pos(m) )
+    {
+        return UC_INPUT_ERR;
+    }
+
+    uc_init(&q);
+    uc_init(&r);
+
+    uc_div(&q, &r, y, m);
+    uc_copy(x, &r);
+
+    uc_free(&q);
+    uc_free(&r);
+
+    return UC_OK;
+}
+
 int uc_gcd(uc_int *z, uc_int *x, uc_int *y)
 {
     // TODO
