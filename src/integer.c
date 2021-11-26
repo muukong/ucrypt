@@ -57,7 +57,8 @@ int uc_init_zero(uc_int *x)
  */
 int uc_grow(uc_int *x, int n)
 {
-    assert( x && n >= 0 );
+    assert( x );
+    assert( n >= 0 );
 
     int i;
     uc_digit *tmp;
