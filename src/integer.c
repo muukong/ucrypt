@@ -642,6 +642,27 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
     if ( uc_is_zero(y) )
         return UC_INPUT_ERR;
 
+    /*
+     * If x < y, we know that q = 0 and r = x
+     */
+    if ( uc_lt(x, y) )
+    {
+        uc_zero_out(q);
+        uc_copy(r, x);
+        return UC_OK;
+    }
+
+    /*
+     * If x == y, we know that q = 1 and r = 0;
+     * // TODO: check if this case is needed
+     */
+    if ( uc_eq(x, y) )
+    {
+        uc_init_from_int(q, 1);
+        uc_zero_out(q);
+        return UC_OK;
+    }
+
     uc_init(&xt);
     uc_init(&yt);
     uc_init(&tmp);
