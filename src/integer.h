@@ -135,7 +135,8 @@ int uc_write_radix_len(uc_int *x, int radix);
  * Miscellaneous / Debug
  */
 
-void debug_print(uc_int *x);
-void debug_print_bytes(uc_int *x);
+void uc_debug_print_int(uc_int *x);
+void uc_debug_print_int_bytes(uc_int *x);
+void uc_debug_print_int_radix(uc_int *x, int radix);
 
 #endif //UCRYPT_INTEGER_H

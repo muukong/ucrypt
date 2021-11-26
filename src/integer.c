@@ -1230,7 +1230,7 @@ int uc_write_radix_len(uc_int *x, int r)
  * Miscellaneous / Debug
  */
 
-void debug_print(uc_int *x)
+void uc_debug_print_int(uc_int *x)
 {
     int i;
 
@@ -1249,7 +1249,7 @@ void debug_print(uc_int *x)
     printf("]\n");
 }
 
-void debug_print_bytes(uc_int *x)
+void uc_debug_print_int_bytes(uc_int *x)
 {
     int i;
     for ( i = 0; i < x->alloc; ++i )
@@ -1261,3 +1261,20 @@ void debug_print_bytes(uc_int *x)
     }
     printf("\n");
 }
+
+void uc_debug_print_int_radix(uc_int *x, int radix)
+{
+    assert( 2 <= radix );
+    assert( radix <= 16 );
+
+    int len;
+    char *s;
+
+    len = uc_write_radix_len(x, radix);
+    s = malloc(len * sizeof(char*));
+    uc_write_radix(s, len, x, radix);
+    printf("%s\n", s);
+    free(s);
+}
+
+
