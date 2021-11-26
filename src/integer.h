@@ -84,7 +84,7 @@ int uc_cmp_mag(uc_int *x, uc_int *y);
 #define uc_gte(x, y) (uc_cmp((x),(y)) != UC_LT)     // >=
 
 #define uc_is_zero(x) ((x)->used == 1 && (x)->digits[0] == 0)
-#define uc_is_pos(x) ((x)->sign == UC_NEG)
+#define uc_is_pos(x) ((x)->sign == UC_POS && !uc_is_zero(x))
 #define uc_is_neg(x) ((x)->sign == UC_NEG)
 
 #define uc_is_odd(x) ((x)->digits[0] & 1)
