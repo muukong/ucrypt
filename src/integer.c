@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "integer.h"
+#include "string_util.h"
 #include "ucalloc.h"
 
 /*
@@ -1013,6 +1014,14 @@ static uc_word _uc_gcd_word(uc_word x, uc_word y)
  * Conversion
  */
 
+/*
+ * Reads an arbitrary-length string in little-endian radix-r representation
+ * (2 <= r <= 16) and converts it to a string. the input sting can be prepended
+ * with a '+' or '-' sign.
+ *
+ * Alphabet = 0 1 2 3 4 5 6 7 8 9 A B C D E F where radix r with 2 <= r <= 16 uses
+ * the first r letters of the alphabet (lower-case letters are allowed as well).
+ */
 int uc_read_radix(uc_int *x, const char *y, int radix)
 {
     assert(2 <= radix && radix <= 16);
@@ -1074,6 +1083,125 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
     uc_free(&tmp);
 
     return UC_OK;
+}
+
+/*
+ * Converts x into a little-endian radix-r string representation. Negative numbers start
+ * with a '-' character and the string is null-terminated.
+ *
+ * The required string length n (which includes the null-byte) can be computed with
+ * the helper function uc_write_radix_len(..).
+ */
+int uc_write_radix(char *y, int n, uc_int *x, int radix)
+{
+    int sign, digit, digit_ctr;
+    uc_int xt;          /* temporary copy of x */
+    uc_int q, r, rad;        /* temporary helper variables */
+
+    if ( n < 2 )
+        UC_INPUT_ERR;
+
+    /*
+     * If x == 0
+     */
+    if ( uc_is_zero(x) )
+    {
+        y[0] = '0';
+        y[1] = 0;
+        return UC_OK;
+    }
+
+    uc_init(&xt);
+    uc_init(&q);
+    uc_init(&r);
+    uc_init(&rad);
+    digit_ctr = 0;
+
+    uc_copy(&xt, x);
+    uc_init_from_int(&rad, radix);
+
+    /*
+     * If xt is negative, we remember to add a negative sign in the beginning and
+     * then proceed with xt := |xt|
+     * (We add the negative sign at the end as the string will be reversed)
+     */
+    sign = UC_POS;
+    if (uc_is_neg(&xt) )
+    {
+        sign = UC_NEG;
+        xt.sign = UC_POS;
+    }
+
+    /*
+     * Create output string in reverse order
+     */
+    while ( !uc_is_zero(&xt) ) {
+        uc_div(&q, &r, &xt, &rad);
+
+        digit = r.digits[0];
+        assert(0 <= digit && digit < radix);
+        if (0 <= digit && digit < 10)
+            y[digit_ctr++] = '0' + digit;
+        else
+            y[digit_ctr++] = 'A' + (digit - 10);
+
+        uc_copy(&xt, &q);
+    }
+
+    /* Append negative sign if necessary */
+    if ( sign == UC_NEG )
+        y[digit_ctr++] = '-';
+
+    /* Null-terminate string */
+    y[digit_ctr] = 0;
+
+    reverse_string(y, digit_ctr);
+
+    uc_free(&xt);
+    uc_free(&q);
+    uc_free(&r);
+    uc_free(&rad);
+
+    return UC_OK;
+}
+
+/*
+ * Returns the string length required (including null-byte)
+ * to hold the string representation of x in radix r representation.
+ */
+int uc_write_radix_len(uc_int *x, int r)
+{
+    int len;
+    uc_int rt, xt, tmp, tmp2;
+
+    if ( uc_is_zero(x) )
+        return 2;           /* '0' character and null byte */
+
+    uc_init(&rt);
+    uc_init(&tmp);
+    uc_init(&tmp2);
+
+    len = 2; /* we need at least 1 digit and a null-byte */
+
+    if ( uc_is_neg(x) )
+        ++len; /* one more character for the negative sign '-' */
+
+    uc_init_from_int(&rt, r);
+    uc_init_from_int(&tmp, r);
+    while ( uc_cmp_mag(&tmp, x) == UC_LT )
+    {
+        ++len;
+        uc_mul_d(&tmp2, &tmp, r);
+        uc_copy(&tmp, &tmp2);
+    }
+    ++len; /* Since tmp starts at r, the algorithm above can underestimate the required
+            * length by 1 digit. */
+
+    uc_free(&rt);
+    uc_free(&tmp);
+    uc_free(&tmp2);
+
+    return len;
 }
 
 /*
