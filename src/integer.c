@@ -1229,7 +1229,7 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
     /* Initialize x with zero and ensure that we have enough room
      */
     uc_set_zero(x);
-    uc_grow(x, (strlen(y) * radix) / UC_DIGIT_BITS + 1);
+    uc_grow(x, (strlen(y) * radix) / UC_INT_BASE + 1);
 
     /*
      * Extract the sign and store it. Since at this point x is zero we cannot assign
