@@ -877,7 +877,7 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
  */
 int uc_div_2(uc_int *x, uc_int *y)
 {
-    /* Division by two is equivalent to a left shift by one bit */
+    /* Division by two is equivalent to a right shift by one bit */
     return uc_rshb(x, y, 1);
 }
 
