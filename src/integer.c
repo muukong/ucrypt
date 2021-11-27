@@ -836,7 +836,7 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
         /*
          * Quotient estimation
          */
-        q_estimate = ( ((uc_word) x->digits[n+j] * UC_INT_BASE) + ((uc_word) x->digits[n+j-1]) ) / y->digits[n-1];
+        q_estimate = ( (((uc_word) x->digits[n+j]) * UC_INT_BASE) + ((uc_word) x->digits[n+j-1]) ) / ((uc_word) y->digits[n-1]);
         if ( q_estimate > (UC_INT_BASE - 1) )
             q_estimate = UC_INT_BASE - 1;
         q->digits[j] = q_estimate;
@@ -1293,8 +1293,8 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
 int uc_write_radix(char *y, int n, uc_int *x, int radix)
 {
     int sign, digit, digit_ctr;
-    uc_int xt;          /* temporary copy of x */
-    uc_int q, r, rad;        /* temporary helper variables */
+    uc_int xt;                  /* temporary copy of x */
+    uc_int q, r, rad;           /* temporary helper variables */
 
     if ( n < 2 )
         UC_INPUT_ERR;
@@ -1309,10 +1309,8 @@ int uc_write_radix(char *y, int n, uc_int *x, int radix)
         return UC_OK;
     }
 
-    uc_init(&xt);
-    uc_init(&q);
-    uc_init(&r);
-    uc_init(&rad);
+    uc_init_multi(&xt, &q, &r, &rad, 0, 0);
+
     digit_ctr = 0;
 
     uc_copy(&xt, x);
@@ -1333,7 +1331,8 @@ int uc_write_radix(char *y, int n, uc_int *x, int radix)
     /*
      * Create output string in reverse order
      */
-    while ( !uc_is_zero(&xt) ) {
+    while ( !uc_is_zero(&xt) )
+    {
         uc_div(&q, &r, &xt, &rad);
 
         digit = r.digits[0];
@@ -1481,7 +1480,7 @@ void uc_debug_print_int_radix(uc_int *x, int radix)
     char *s;
 
     len = uc_write_radix_len(x, radix);
-    s = malloc(len * sizeof(char*));
+    s = malloc(len * sizeof(char));
     uc_write_radix(s, len, x, radix);
     printf("%s\n", s);
     free(s);
