@@ -485,7 +485,7 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
     /* Ensure that z is initialized with 0 and that there is enough space to hold the result */
     uc_set_zero(z);
     uc_grow(z, x->used + 1);
-    z->used = z->used + 1;
+    //z->used = z->used + 1;
 
     int i;
     uc_digit c = 0;     // carry
@@ -595,7 +595,7 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
     /* Ensure that z is initialized with 0 and that there is enough space to hold the result */
     uc_set_zero(z);
     uc_grow(z, x->used + 1);
-    z->used = x->used + 1;
+    z->used = z->alloc;
 
     int i;
     uc_digit c = 0; // carry
