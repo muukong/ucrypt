@@ -128,7 +128,7 @@ int uc_flip_sign(uc_int *x);
 
 int uc_count_bits(uc_int *x);
 
-int uc_gc(uc_int *z, uc_int *x, uc_int *y);
+//int uc_gc(uc_int *z, uc_int *x, uc_int *y);
 
 /*
  * Modular arithmetic

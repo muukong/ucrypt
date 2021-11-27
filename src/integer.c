@@ -1132,9 +1132,42 @@ int uc_mod(uc_int *x, uc_int *y, uc_int *m)
     return UC_OK;
 }
 
-int uc_gcd(uc_int *z, uc_int *x, uc_int *y)
+int uc_gcd(uc_int *z, uc_int *u, uc_int *v)
 {
-    // TODO
+    int res;
+    uc_int vt, tmp, tmp2;
+
+    if ( !uc_is_pos(u) || !uc_is_pos(v) )
+        return UC_INPUT_ERR;
+
+    res = UC_OK;
+
+    if ( (res = uc_init_multi(&vt, &tmp, &tmp2, 0, 0, 0)) != UC_OK )
+        return res;
+
+    if  ( (res = uc_copy(z, u)) != UC_OK ||
+          (res = uc_copy(&vt, v)) != UC_OK )
+    {
+        goto leave;
+    }
+
+    while ( !uc_is_zero(&vt) )
+    {
+        if ( (res = uc_copy(&tmp, z)) != UC_OK ||
+             (res = uc_copy(z, &vt)) != UC_OK ||
+             (res = uc_mod(&tmp2, &tmp, &vt)) != UC_OK ||
+             (res = uc_copy(&vt, &tmp2)) != UC_OK  )
+        {
+            goto leave;
+        }
+    }
+
+leave:
+    uc_free(&vt);
+    uc_free(&tmp);
+    uc_free(&tmp2);
+
+    return res;
 }
 
 /*
