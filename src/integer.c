@@ -1306,7 +1306,8 @@ int uc_add_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
  */
 int uc_mod(uc_int *x, uc_int *y, uc_int *m)
 {
-    uc_int q, r;
+    int res;
+    uc_int qt;
 
     /* Check that y >= 0 and m > 0 */
     if ( uc_is_neg(y) || !uc_is_pos(m) )
@@ -1314,16 +1315,16 @@ int uc_mod(uc_int *x, uc_int *y, uc_int *m)
         return UC_INPUT_ERR;
     }
 
-    uc_init(&q);
-    uc_init(&r);
+    if ((res = uc_init(&qt)) != UC_OK ||
+        (res = uc_div(&qt, x, y, m)) != UC_OK )
+    {
+        goto cleanup;
+    }
 
-    uc_div(&q, &r, y, m);
-    uc_copy(x, &r);
+cleanup:
+    uc_free(&qt);
 
-    uc_free(&q);
-    uc_free(&r);
-
-    return UC_OK;
+    return res;
 }
 
 int uc_gcd(uc_int *z, uc_int *u, uc_int *v)
