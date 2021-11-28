@@ -116,6 +116,7 @@ int uc_mul_d(uc_int *z, uc_int *x, uc_digit d);
 int uc_sqrd(uc_int *x, uc_int *y);
 int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 int uc_div_2(uc_int *x, uc_int *y);
+int uc_exp(uc_int *z, uc_int *x, uc_int *y);
 
 
 int uc_lshb(uc_int *x, uc_int *y, int n);

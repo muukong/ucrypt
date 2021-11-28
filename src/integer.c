@@ -949,6 +949,75 @@ int uc_div_2(uc_int *x, uc_int *y)
 }
 
 /*
+ * Compute z = x ^ y for y >= 0.
+ */
+int uc_exp(uc_int *z, uc_int *x, uc_int *y)
+{
+    assert( !uc_is_neg(y) );
+
+    uc_int tmp;
+    int i, n, res;
+
+    res = UC_OK;
+
+    /*
+     * If y is zero, simply set z to 1.
+     *
+     * Note: We use the convention that 0^0 = 1.
+     */
+    if ( uc_is_zero(y) )
+        return uc_set_i(z, 1);
+
+    if ( (res = uc_init(&tmp)) != UC_OK ||
+         (res = uc_set_i(z, 1)) != UC_OK )
+    {
+        goto cleanup;
+    }
+
+    /*
+     * Square and multiply. (Note: we ignore the sign during this loop and
+     * fix it later).
+     */
+    n = uc_count_bits(y);
+    for ( i = n - 1; i >= 0; --i )
+    {
+        /* z = z * z */
+        if ( (res = uc_sqrd(&tmp, z)) != UC_OK ||
+             (res = uc_copy(z, &tmp)) != UC_OK )
+        {
+            goto cleanup;
+        }
+
+        /*
+         * z = z * x ^ (y_i) where y_i is i-th exponent bit.
+         *
+         * To avoid time-based side channel information leakage, we carry out the
+         * multiplication and result copy operation regardless of the exponent
+         * bit y_i.
+         */
+
+        if ( (res = uc_mul(&tmp, z, x)) != UC_OK )
+            goto cleanup;
+
+        if ( uc_nth_bit(y,i) == 1 )
+            uc_copy(z, &tmp);
+        else
+            uc_copy(z, z);
+    }
+
+    /* Fix sign */
+    if ( uc_is_neg(x) && uc_is_odd(y) )
+        z->sign = UC_NEG;
+    else
+        z->sign = UC_POS;
+
+cleanup:
+    uc_free(&tmp);
+
+    return res;
+}
+
+/*
  * Compute x = (y << n) for n >= 0
  *
  * I.e., shift y left by n bits and store result in x
