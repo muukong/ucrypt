@@ -756,18 +756,7 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
     }
 
     /*
-    if ( x->used == 1 && y->used == 1 )
-    {
-        uc_set_d(q, x->digits[0] / y->digits[0]);
-        uc_set_d(r, x->digits[0] % y->digits[0]);
-        return UC_OK;
-    }
-     */
-
-
-    /*
      * If x == y, we know that q = 1 and r = 0;
-     * // TODO: check if this case is needed
      */
     if ( uc_eq(x, y) )
     {
@@ -776,9 +765,7 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
         return UC_OK;
     }
 
-    uc_init(&xt);
-    uc_init(&yt);
-    uc_init(&tmp);
+    uc_init_multi(&xt, &yt, &tmp, 0, 0, 0);
 
     uc_copy(&xt, x);        // x'
     uc_copy(&yt, y);        // y'
@@ -793,7 +780,6 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
      *
      * When then calculate with x' and y' and normalize r and q in the end.
      */
-
     for ( k = 0; yt.digits[yt.used-1] < UC_INT_BASE / ((uc_word)2); ++k )
     {
         uc_lshb(&tmp, &xt, 1);
@@ -814,7 +800,11 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
     uc_rshb(&tmp, r, k);
     uc_copy(r, &tmp);
 
-    // TODO: FREE UP RESOURCES
+    /* Cleanup local variables */
+    uc_free(&xt);
+    uc_free(&yt);
+    uc_free(&tmp);
+
     return UC_OK;
 }
 
