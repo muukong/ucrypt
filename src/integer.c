@@ -1321,6 +1321,73 @@ cleanup:
 }
 
 /*
+ * Compute inverse u of b modulo N, i.e., s.t. u * b = 1 (mod N)
+ */
+int uc_mod_inv(uc_int *u, uc_int *b, uc_int *N)
+{
+    int res;
+    uc_int c, w, q, r, bt, tmp;
+
+    if ((res = uc_init_multi(&c, &tmp, &w, &q, &r, &bt)) != UC_OK )
+        return res;
+
+    if ((res = uc_copy(&bt, b)) != UC_OK )
+        goto cleanup;
+
+    if ((res = uc_set_i(u, 1)) != UC_OK ||
+        (res = uc_set_zero(&w)) != UC_OK ||
+        (res = uc_copy(&c, N)) != UC_OK )
+    {
+        goto cleanup;
+    }
+
+    while ( !uc_is_zero(&c) )
+    {
+        if ( (res = uc_div(&q, &r, &bt, &c)) != UC_OK )
+            goto cleanup;
+
+        /*
+         * (b, c) := (c, r)
+         */
+
+        if ( (res = uc_copy(&bt, &c)) != UC_OK ||
+             (res = uc_copy(&c, &r)) != UC_OK )
+        {
+            goto cleanup;
+        }
+
+        /*
+         * (u, w) = (w, u - q * w)
+         */
+
+        /* use r as temporary variable for w (it's not needed anymore until the next loop iteration */
+        if ( (res = uc_copy(&r, &w)) != UC_OK)
+            goto cleanup;
+
+        if ( (res = uc_mul_mod(&tmp, &q, &w, N)) != UC_OK ||
+             (res = uc_sub(&w, u, &tmp)) != UC_OK )
+        {
+            goto cleanup;
+        }
+
+        /* If w < 0, add N to make it non-negative again */
+        if (uc_is_neg(&w) )
+        {
+            uc_add(&tmp, &w, N);
+            uc_copy(&w, &tmp);
+        }
+        assert( !uc_is_neg(&w) );
+
+        uc_copy(u, &r);
+    }
+
+cleanup:
+    uc_free_multi(&c, &tmp, &w, &q, &r, &bt);
+
+    return res;
+}
+
+/*
  * Compute x = y (mod m) for y >= 0 and m > 0
  */
 int uc_mod(uc_int *x, uc_int *y, uc_int *m)
