@@ -516,7 +516,7 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
         uc_digit tmp = x->digits[i] + y->digits[i] + c;
         c = tmp >> UC_DIGIT_BITS;
         z->digits[i] = tmp & UC_DIGIT_MASK;
-        z->used++;
+        z->used = i + 1;
     }
 
     for ( ; i < x->used; ++i )
@@ -524,14 +524,17 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
         uc_digit tmp = x->digits[i] + c;
         c = tmp >> UC_DIGIT_BITS;
         z->digits[i] = tmp & UC_DIGIT_MASK;
-        z->used++;
+        z->used = i + 1;
     }
 
     if (c > 0 )
     {
         z->digits[i] = c;
-        z->used++;
+        z->used = i + 1;
     }
+
+    if ( z->used > z->alloc )
+        puts(":)");
 
     res = uc_clamp(z);
 
@@ -1519,7 +1522,6 @@ int uc_egcd(uc_int *g, uc_int *u, uc_int *v, uc_int *a, uc_int *b)
         /*
          * (v, x) <-- (x, v - q * x)
          */
-        /*
         if ( (res = uc_copy(&r, &x)) != UC_OK ||
                 (res = uc_mul(&tmp, &q, &x)) != UC_OK ||
                 (res = uc_sub(&x, v, &tmp)) != UC_OK ||
@@ -1527,7 +1529,6 @@ int uc_egcd(uc_int *g, uc_int *u, uc_int *v, uc_int *a, uc_int *b)
         {
             goto cleanup;
         }
-         */
     }
 
 cleanup:
