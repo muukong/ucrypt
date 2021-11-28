@@ -1321,68 +1321,73 @@ cleanup:
 }
 
 /*
- * Compute inverse u of b modulo N, i.e., s.t. u * b = 1 (mod N)
+ * Compute inverse x of y modulo m, i.e., s.t. x * y = 1 (mod m)
+ *
+ * Note: In Modern Computer Arithmetic, different variables names are used:
+ * x ==> u
+ * y ==> b
+ * m ==> N
  */
-int uc_mod_inv(uc_int *u, uc_int *b, uc_int *N)
+int uc_mod_inv(uc_int *x, uc_int *y, uc_int *m)
 {
     int res;
-    uc_int c, w, q, r, bt, tmp;
+    uc_int c, w, q, r, yt, tmp;
 
-    if ((res = uc_init_multi(&c, &tmp, &w, &q, &r, &bt)) != UC_OK )
+    if ((res = uc_init_multi(&c, &tmp, &w, &q, &r, &yt)) != UC_OK )
         return res;
 
-    if ((res = uc_copy(&bt, b)) != UC_OK )
+    if ((res = uc_copy(&yt, y)) != UC_OK )
         goto cleanup;
 
-    if ((res = uc_set_i(u, 1)) != UC_OK ||
+    if ((res = uc_set_i(x, 1)) != UC_OK ||
         (res = uc_set_zero(&w)) != UC_OK ||
-        (res = uc_copy(&c, N)) != UC_OK )
+        (res = uc_copy(&c, m)) != UC_OK )
     {
         goto cleanup;
     }
 
     while ( !uc_is_zero(&c) )
     {
-        if ( (res = uc_div(&q, &r, &bt, &c)) != UC_OK )
+        if ((res = uc_div(&q, &r, &yt, &c)) != UC_OK )
             goto cleanup;
 
         /*
-         * (b, c) := (c, r)
+         * (y, c) := (c, r)
          */
 
-        if ( (res = uc_copy(&bt, &c)) != UC_OK ||
+        if ((res = uc_copy(&yt, &c)) != UC_OK ||
              (res = uc_copy(&c, &r)) != UC_OK )
         {
             goto cleanup;
         }
 
         /*
-         * (u, w) = (w, u - q * w)
+         * (x, w) = (w, x - q * w)
          */
 
         /* use r as temporary variable for w (it's not needed anymore until the next loop iteration */
         if ( (res = uc_copy(&r, &w)) != UC_OK)
             goto cleanup;
 
-        if ( (res = uc_mul_mod(&tmp, &q, &w, N)) != UC_OK ||
-             (res = uc_sub(&w, u, &tmp)) != UC_OK )
+        if ((res = uc_mul_mod(&tmp, &q, &w, m)) != UC_OK ||
+             (res = uc_sub(&w, x, &tmp)) != UC_OK )
         {
             goto cleanup;
         }
 
-        /* If w < 0, add N to make it non-negative again */
+        /* If w < 0, add m to make it non-negative again */
         if (uc_is_neg(&w) )
         {
-            uc_add(&tmp, &w, N);
+            uc_add(&tmp, &w, m);
             uc_copy(&w, &tmp);
         }
         assert( !uc_is_neg(&w) );
 
-        uc_copy(u, &r);
+        uc_copy(x, &r);
     }
 
 cleanup:
-    uc_free_multi(&c, &tmp, &w, &q, &r, &bt);
+    uc_free_multi(&c, &tmp, &w, &q, &r, &yt);
 
     return res;
 }
