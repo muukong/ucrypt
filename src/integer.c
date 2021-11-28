@@ -493,10 +493,16 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
 {
     assert(uc_cmp_mag(x, y) != UC_LT);
 
+    int res;
+
+    res = UC_OK;
+
     /* Ensure that z is initialized with 0 and that there is enough space to hold the result */
-    uc_set_zero(z);
-    uc_grow(z, x->used + 1);
-    //z->used = z->used + 1;
+    if ( (res = uc_set_zero(z)) != UC_OK ||
+         (res = uc_grow(z, x->used + 1)) != UC_OK )
+    {
+        return res;
+    }
 
     int i;
     uc_digit c = 0;     // carry
@@ -524,7 +530,7 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
 
     uc_clamp(z);
 
-    return UC_OK;
+    return res;
 }
 
 /*
