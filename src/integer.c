@@ -1302,6 +1302,29 @@ int uc_add_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
 }
 
 /*
+ * Compute z = x * y (mod m) for 0 <= x, y < m and m >= 0
+ */
+int uc_mul_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
+{
+    int res;
+    uc_int tmp;
+
+    if ( (res = uc_init(&tmp)) != UC_OK )
+        return res;
+
+    if ( (res = uc_mul(&tmp, x, y)) != UC_OK ||
+         (res = uc_mod(z, &tmp, m)) != UC_OK )
+    {
+        goto cleanup;
+    }
+
+cleanup:
+    uc_free(&tmp);
+
+    return res;
+}
+
+/*
  * Compute x = y (mod m) for y >= 0 and m > 0
  */
 int uc_mod(uc_int *x, uc_int *y, uc_int *m)
@@ -1314,6 +1337,10 @@ int uc_mod(uc_int *x, uc_int *y, uc_int *m)
     {
         return UC_INPUT_ERR;
     }
+
+    /* No reductions needed if y < m */
+    if ( uc_lt(y, m) )
+        return uc_copy(x, y);
 
     if ((res = uc_init(&qt)) != UC_OK ||
         (res = uc_div(&qt, x, y, m)) != UC_OK )

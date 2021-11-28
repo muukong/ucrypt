@@ -137,6 +137,7 @@ int uc_count_bits(uc_int *x);
  */
 
 int uc_add_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
+int uc_mul_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
 
 int uc_mod(uc_int *x, uc_int *y, uc_int *m);
 
