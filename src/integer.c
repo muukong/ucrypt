@@ -726,7 +726,7 @@ static int _check_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 
     if ( !uc_eq_mag(x, &t2) )
     {
-        puts(":(");
+        puts("[!] _check_div FAILED. Exiting know...");
         exit(1);
     }
 }
@@ -738,13 +738,6 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 {
     int k;
     uc_int xt, yt, tmp;
-
-    /*
-    puts("<DIV INPUT>");
-    uc_debug_print_int(x);
-    uc_debug_print_int(y);
-    puts("</DIV INPUT>");
-     */
 
     /*
      * Bad things happen if we divide by zero.
@@ -810,8 +803,6 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
         uc_copy(&yt, &tmp);
     }
 
-    printf("k = %d\n", k);
-
     _uc_div(q, r, &xt, &yt);
 
     /*
@@ -820,12 +811,8 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
      * There is no need to change q as it is not affected by the normalization since
      * x' // y' == (x * 2^k) // (y * 2^k) = x // y
      */
-    //puts("r = ");
-    //uc_debug_print_int(r);
     uc_rshb(&tmp, r, k);
     uc_copy(r, &tmp);
-    //puts("r = ");
-    //uc_debug_print_int(r);
 
     // TODO: FREE UP RESOURCES
     return UC_OK;
@@ -844,21 +831,12 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
     uc_word q_estimate;
     uc_int ta, tb, tc;
 
-    /*
-    puts("<Initial>");
-    uc_debug_print_int(x);
-    uc_debug_print_int(y);
-    puts("</Initial>");
-     */
-
     uc_init(&ta);
     uc_init(&tb);
     uc_init(&tc);
 
     n = y->used;
     m = x->used - n;
-    //printf("n = %d\n", n);
-    //printf("m = %d\n", m);
 
     assert( y->digits[n-1] >= UC_INT_BASE / ((uc_word) 2));
 
@@ -870,34 +848,21 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
      * Step 1
      */
     /* ta = base^m * y */
-    //printf("y = ");
-    //uc_debug_print_int(y);
     uc_copy(&ta, y);
     uc_lshd(&ta, m);
-    //printf("ta = ");
-    //uc_debug_print_int(&ta);
 
-    //printf("x = ");
-    //uc_debug_print_int_bytes(x);
     if ( uc_gte(x, &ta) )
     {
         q->digits[m] = 1;
         uc_sub(&tb, x, &ta);
         uc_copy(x, &tb); // TODO: this copy is not needed (we don't need tb)
     }
-    //printf("x = ");
-    //uc_debug_print_int_bytes(x);
-    //printf("q = ");
-    //uc_debug_print_int_bytes(q);
 
     /*
      * Steps 2 - 8
      */
     for ( j = m - 1; j >= 0; --j )
     {
-        //puts("");
-        //printf("j = %d\n", j);
-
         /*
          * Quotient estimation
          */
@@ -908,53 +873,20 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
         q->digits[j] = q_estimate;
 
         /*
-        puts("<XXXXX>");
-
-        printf("x = ");
-        uc_debug_print_int(x);
-        printf("y = ");
-        uc_debug_print_int(y);
-         */
-
-        /*
          * x = x - q_estimate * (base ^ j) * y
          */
-        //puts("1)");
-        //uc_debug_print_int(y);
         uc_mul_d(&ta, y, q_estimate);   // ta = y * q_estimate
-        //uc_debug_print_int(&ta);
-        //puts("2)");
-        //uc_debug_print_int(&ta);
         uc_lshd(&ta, j);                // ta = ta * (base ^ j)
-        //uc_debug_print_int(&ta);
-        //puts("3)");
-        //uc_debug_print_int(x);
-        //uc_debug_print_int(&ta);
         uc_sub(&tb, x, &ta);
-        //uc_debug_print_int(&tb);
         uc_copy(x, &tb);
-        //printf("X = ");
-        //uc_debug_print_int(x);
-
-        //printf("x = ");
-        //uc_debug_print_int(x);
-
-        //puts("</XXXXX>");
 
         uc_set_zero(&ta);
-
-        //printf("x = \n");
-        //uc_debug_print_int(x);
-        //printf("ta = \n");
-        //uc_debug_print_int(&ta);
-
         while ( uc_lt(x, &ta) )
         {
             q->digits[j]--;
             uc_copy(&tb, y);
             uc_lshd(&tb, j);
             uc_add(&tc, x, &tb);
-
             uc_copy(x, &tc);
         }
     }
@@ -963,11 +895,6 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 
     uc_clamp(r);
     uc_clamp(q);
-
-    puts("<RESULT>");
-    uc_debug_print_int(q);
-    uc_debug_print_int(r);
-    puts("</RESULT>");
 
     return UC_OK;
 }
@@ -1496,17 +1423,6 @@ int uc_write_radix(char *y, int n, uc_int *x, int radix)
         uc_div(&q, &r, &xt, &rad);
 
         digit = r.digits[0];
-
-        if ( digit < 0 || digit >= radix )
-        {
-            puts("###########");
-            uc_debug_print_int(&q);
-            uc_debug_print_int(&r);
-            uc_debug_print_int(&xt);
-            uc_debug_print_int(&rad);
-            puts("Exiting know...");
-            exit(0);
-        }
 
         assert(0 <= digit && digit < radix);
         if (0 <= digit && digit < 10)
