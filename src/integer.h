@@ -127,8 +127,8 @@ int uc_abs(uc_int *x, uc_int *y);
 int uc_flip_sign(uc_int *x);
 
 int uc_count_bits(uc_int *x);
-
-//int uc_gc(uc_int *z, uc_int *x, uc_int *y);
+/* Returns n-th bit of x (index starts at 0) */
+#define uc_nth_bit(x, n) (((x)->digits[n / UC_DIGIT_BITS] >> ((n) % UC_DIGIT_BITS)) & 1)
 
 /*
  * Modular arithmetic
