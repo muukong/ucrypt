@@ -372,6 +372,15 @@ int uc_free(uc_int *x)
     return UC_OK;
 }
 
+int uc_free_multi(uc_int *x0, uc_int *x1, uc_int *x2, uc_int *x3, uc_int *x4, uc_int *x5)
+{
+    if ( x0 ) uc_free(x0);
+    if ( x1 ) uc_free(x1);
+    if ( x2 ) uc_free(x2);
+    if ( x3 ) uc_free(x3);
+    if ( x4 ) uc_free(x4);
+    if ( x5 ) uc_free(x5);
+}
 
 /*
  * Comparisons
@@ -718,6 +727,7 @@ int uc_exch (uc_int * a, uc_int * b)
 static int _check_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 {
     uc_int t1, t2;
+
     uc_init(&t1);
     uc_init(&t2);
 
@@ -729,6 +739,9 @@ static int _check_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
         puts("[!] _check_div FAILED. Exiting know...");
         exit(1);
     }
+
+    uc_free(&t1);
+    uc_free(&t2);
 }
 
 /*
@@ -885,6 +898,10 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 
     uc_clamp(r);
     uc_clamp(q);
+
+    uc_free(&ta);
+    uc_free(&tb);
+    uc_free(&tc);
 
     return UC_OK;
 }
@@ -1179,6 +1196,8 @@ int uc_add_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
         uc_copy(z, &tmp);
     }
 
+    uc_free(&tmp);
+
     return UC_OK;
 }
 
@@ -1300,6 +1319,9 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
     assert(2 <= radix && radix <= 16);
     assert(strlen(y) > 0);
 
+    int sign;
+    uc_int tmp;
+
     /*
     /* Initialize x with zero and ensure that we have enough room
      */
@@ -1310,7 +1332,7 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
      * Extract the sign and store it. Since at this point x is zero we cannot assign
      * a negative sign; therefore, we assign it at the end of the function.
      */
-    int sign = UC_POS;
+    sign = UC_POS;
     if ( *y == '+' )
         ++y;
     else if ( *y == '-' )
@@ -1319,7 +1341,6 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
         ++y;
     }
 
-    uc_int tmp;
     uc_init(&tmp);
 
     for ( ; *y; ++y )
@@ -1447,7 +1468,7 @@ int uc_write_radix(char *y, int n, uc_int *x, int radix)
 int uc_write_radix_len(uc_int *x, int r)
 {
     int len;
-    uc_int rt, xt, tmp, tmp2;
+    uc_int rt, tmp, tmp2;
 
     if ( uc_is_zero(x) )
         return 2;           /* '0' character and null byte */

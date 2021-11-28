@@ -72,6 +72,7 @@ int uc_copy(uc_int *x, uc_int *y);
 int uc_grow(uc_int *x, int n);
 int uc_clamp(uc_int *x);
 int uc_free(uc_int *x);
+int uc_free_multi(uc_int *x0, uc_int *x1, uc_int *x2, uc_int *x3, uc_int *x4, uc_int *x5);
 
 /*
  * Comparisons
