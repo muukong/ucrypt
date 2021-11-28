@@ -16,6 +16,8 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_mul(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 
+static int _check_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
+
 static uc_word _uc_gcd_word(uc_word x, uc_word y);
 
 /*
@@ -713,6 +715,22 @@ int uc_exch (uc_int * a, uc_int * b)
     return UC_OK;
 }
 
+static int _check_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
+{
+    uc_int t1, t2;
+    uc_init(&t1);
+    uc_init(&t2);
+
+    uc_mul(&t1, q, y);
+    uc_add(&t2, &t1, r);
+
+    if ( !uc_eq_mag(x, &t2) )
+    {
+        puts(":(");
+        exit(1);
+    }
+}
+
 /*
  * Compute r and q s.t. x = q * y + r for non-negative integers x and y.
  */
@@ -785,6 +803,8 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
     uc_rshb(&tmp, r, k);
     uc_copy(r, &tmp);
 
+    // TODO: FREE UP RESOURCES
+
     return UC_OK;
 }
 
@@ -825,7 +845,7 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
     {
         q->digits[m] = 1;
         uc_sub(&tb, x, &ta);
-        uc_copy(x, &tb);
+        uc_copy(x, &tb); // TODO: this copy is not needed (we don't need tb)
     }
 
     /*
@@ -836,6 +856,7 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
         /*
          * Quotient estimation
          */
+        // TODO: check that x is large enough
         q_estimate = ( (((uc_word) x->digits[n+j]) * UC_INT_BASE) + ((uc_word) x->digits[n+j-1]) ) / ((uc_word) y->digits[n-1]);
         if ( q_estimate > (UC_INT_BASE - 1) )
             q_estimate = UC_INT_BASE - 1;
@@ -895,6 +916,15 @@ int uc_lshb(uc_int *x, uc_int *y, int n)
     if ( n == 0 ) // Nothing to do
         return UC_OK;
 
+    /*
+     * Nothing to do if x is zero.
+     *
+     * Warning: Do not remove this check unless you clamp the number at the very end (otherwise
+     * you end up with a non-normalized zero).
+    */
+    if ( uc_is_zero(y) )
+        return UC_OK;
+
     // Ensure that x can hold result
     if ( x->alloc < x->used + (n / UC_DIGIT_BITS) + 1)
         uc_grow(x, x->used + (n / UC_DIGIT_BITS) + 1);
@@ -938,6 +968,21 @@ int uc_lshb(uc_int *x, uc_int *y, int n)
  */
 int uc_rshb(uc_int *x, uc_int *y, int n)
 {
+    assert( n >= 0 );
+
+    /* Nothing to do */
+    if ( n == 0 )
+        return UC_OK;
+
+    /*
+     * Nothing to do if x is zero.
+     *
+     * Warning: Do not remove this check unless you clamp the number at the very end (otherwise
+     * you end up with a non-normalized zero).
+     */
+    if ( uc_is_zero(y) )
+        return UC_OK;
+
     uc_copy(x, y);
 
     /*
@@ -982,6 +1027,19 @@ int uc_lshd(uc_int *x, int y)
 {
     assert(y >= 0);
 
+    /* Nothing to do */
+    if ( y == 0 )
+        return UC_OK;
+
+    /*
+     * Nothing to do if x is zero.
+     *
+     * Warning: Do not remove this check unless you clamp the number at the very end (otherwise
+     * you end up with a non-normalized zero).
+     */
+    if ( uc_is_zero(x) )
+        return UC_OK;
+
     uc_grow(x, x->used + y);
 
     /* Iterate backwards (i.e. from x_{n-1} to x_0) and copy x_i to x_{i+y} */
@@ -1005,6 +1063,19 @@ int uc_lshd(uc_int *x, int y)
 int uc_rshd(uc_int *x, int y)
 {
     assert(y >= 0);
+
+    /* Nothing to do */
+    if ( y == 0 )
+        return UC_OK;
+
+    /*
+     * Nothing to do if x is zero.
+     *
+     * Warning: Do not remove this check unless you clamp the number at the very end (otherwise
+     * you end up with a non-normalized zero).
+     */
+    if ( uc_is_zero(x) )
+        return UC_OK;
 
     int i;
 
