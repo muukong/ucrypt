@@ -342,13 +342,18 @@ int uc_set_w(uc_int *x, uc_word n)
  */
 int uc_copy(uc_int *x, uc_int *y)
 {
-    uc_set_zero(x);
+    int i;
 
     if ( y->used > x->used )
         uc_grow(x, y->used);
 
-    for ( int i = 0; i < y->used; ++i )
+    /* Copy y to x digit by digit */
+    for ( i = 0; i < y->used; ++i )
         x->digits[i] = y->digits[i];
+
+    /* Zero out the remaining digits of x */
+    for ( ; i < x->used; ++i )
+        x->digits[i] = 0;
 
     x->used = y->used;
     x->sign = y->sign;
