@@ -1468,6 +1468,74 @@ uc_word uc_gcd_word(uc_word x, uc_word y)
     return x >= y ? _uc_gcd_word(x, y) : _uc_gcd_word(y, x);
 }
 
+int uc_egcd(uc_int *g, uc_int *u, uc_int *v, uc_int *a, uc_int *b)
+{
+    int res;
+    uc_int w, x, q, r, bt, tmp;
+
+    if ( (res = uc_init_multi(&w, &x, &q, &r, &bt, &tmp)) != UC_OK )
+        return res;
+
+    if ( (res = uc_copy(g, a) != UC_OK) )
+        goto cleanup;
+
+    /* (u, w) <-- (1, 0) */
+    if ( (res = uc_set_i(u, 1)) != UC_OK ||
+         (res = uc_set_zero(&w)) != UC_OK )
+    {
+        goto cleanup;
+    }
+
+    /* (v, x) <-- (0, 1) */
+    if ( (res = uc_set_zero(v)) != UC_OK ||
+         (res = uc_set_i(&x, 1)) != UC_OK )
+    {
+        goto cleanup;
+    }
+
+    while ( !uc_is_zero(b) )
+    {
+        if ( (res = uc_div(&q, &r, g, b)) != UC_OK )
+            goto cleanup;
+
+        /* (a, b) <-- (b, r) */
+        if ( (res = uc_copy(g, b)) != UC_OK ||
+             (res = uc_copy(b, &r)) != UC_OK )
+        {
+            goto cleanup;
+        }
+
+        /*
+         * (u, w) <-- (w, u - q * w)
+         */
+        if ( (res = uc_copy(&r, &w)) != UC_OK ||
+             (res = uc_mul(&tmp, &q, &w)) != UC_OK ||
+             (res = uc_sub(&w, u, &tmp)) != UC_OK ||
+             (res = uc_copy(u, &r)) != UC_OK )
+        {
+            goto cleanup;
+        }
+
+        /*
+         * (v, x) <-- (x, v - q * x)
+         */
+        /*
+        if ( (res = uc_copy(&r, &x)) != UC_OK ||
+                (res = uc_mul(&tmp, &q, &x)) != UC_OK ||
+                (res = uc_sub(&x, v, &tmp)) != UC_OK ||
+                (res = uc_copy(v, &r)) != UC_OK )
+        {
+            goto cleanup;
+        }
+         */
+    }
+
+cleanup:
+    uc_free_multi(&w, &x, &q, &r, &bt, &tmp);
+
+    return res;
+}
+
 /*
  * Calculate GCD for two positive integers (uc_word) with x >= y
  */
