@@ -1026,10 +1026,9 @@ int uc_lshb(uc_int *x, uc_int *y, int n)
 {
     assert(n >= 0);
 
-    uc_copy(x, y);
-
-    if ( n == 0 ) // Nothing to do
-        return UC_OK;
+    /* Nothing to do */
+    if ( n == 0 )
+        return uc_copy(x, y);
 
     /*
      * Nothing to do if x is zero.
@@ -1038,12 +1037,12 @@ int uc_lshb(uc_int *x, uc_int *y, int n)
      * you end up with a non-normalized zero).
     */
     if ( uc_is_zero(y) )
-    {
-        uc_copy(x, y);
-        return UC_OK;
-    }
+        return uc_copy(x, y);
 
-    // Ensure that x can hold result
+    /* Initialize x */
+    uc_copy(x, y);
+
+    /* Ensure that x can hold result */
     if ( x->alloc < x->used + (n / UC_DIGIT_BITS) + 1)
         uc_grow(x, x->used + (n / UC_DIGIT_BITS) + 1);
 
@@ -1088,9 +1087,8 @@ int uc_rshb(uc_int *x, uc_int *y, int n)
 {
     assert( n >= 0 );
 
-    /* Nothing to do */
     if ( n == 0 )
-        return UC_OK;
+        return uc_copy(x, y);
 
     /*
      * Nothing to do if x is zero.
@@ -1099,11 +1097,9 @@ int uc_rshb(uc_int *x, uc_int *y, int n)
      * you end up with a non-normalized zero).
      */
     if ( uc_is_zero(y) )
-    {
-        uc_copy(x, y);
-        return UC_OK;
-    }
+        return uc_copy(x, y);
 
+    /* Initialize x */
     uc_copy(x, y);
 
     /*
