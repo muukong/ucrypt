@@ -723,6 +723,14 @@ int uc_mul_d(uc_int *z, uc_int *x, uc_digit d)
 }
 
 /*
+ * Computes x = y^2
+ */
+int uc_sqrd(uc_int *x, uc_int *y)
+{
+    return uc_mul(x, y, y); // TODO: Implement more efficient algorithm
+}
+
+/*
  * Compute x = 2 * y
  *
  * TODO: Use a more efficient algorithm
