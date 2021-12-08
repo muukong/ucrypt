@@ -1955,6 +1955,80 @@ int uc_write_radix(char *y, int n, uc_int *x, int radix)
     return UC_OK;
 }
 
+int uc_write_radix_fast(char *s, int n, uc_int *A, int B)
+{
+    int res;
+    int i, k;
+    uc_int bt, tmp1, tmp2;
+    uc_int q, r;
+    int s1_len, s2_len;
+    char *s1, *s2;
+
+    res = UC_OK;
+
+    memset(s, 0, n);
+
+    uc_init_multi(&bt, &tmp1, &tmp2, &q, &r, 0);
+    uc_set_i(&bt, B);
+
+    if ( uc_lt(A, &bt) )
+    {
+        int digit = A->digits[0];
+
+        assert(0 <= digit && digit < B);
+        if (0 <= digit && digit < 10)
+            s[0] = '0' + digit;
+        else
+            s[0] = 'A' + (digit - 10);
+        s[1] = 0;
+        return UC_OK;
+    }
+
+    s1 = malloc(n);
+    s2 = malloc(n);
+
+    for ( k = 1; ; ++k )
+    {
+        uc_exp_i(&tmp1, &bt, 2*k - 2);
+        uc_exp_i(&tmp2, &bt, 2*k);
+
+        if ( uc_lte(&tmp1, A) && uc_lt(A, &tmp2) )
+        {
+            break;
+        }
+    }
+
+    uc_exp_i(&tmp1, &bt, k);
+    uc_div(&q, &r, A, &tmp1);
+
+    uc_write_radix_fast(s1, n, &q, B);
+    uc_write_radix_fast(s2, n, &r, B);
+
+    s1_len = strlen(s1);
+    s2_len = strlen(s2);
+    strcpy(s, s1);
+
+    memset(s, 0, n);
+
+    int idx = 0;
+    for ( i = 0; i < s1_len; ++i, ++idx )
+    {
+        s[idx] = s1[i];
+    }
+    for ( i = 0; i < k - s2_len; ++i, ++idx)
+    {
+        s[idx] = '0';
+    }
+    for ( i = 0; i < s2_len; ++i, ++idx)
+        s[idx] = s2[i];
+    s[idx] = 0;
+
+    free(s1);
+    free(s2);
+
+    return res;
+}
+
 /*
  * Returns the string length required (including null-byte)
  * to hold the string representation of x in radix r representation.
