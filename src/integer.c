@@ -728,6 +728,42 @@ int uc_mul_d(uc_int *z, uc_int *x, uc_digit d)
 }
 
 /*
+ * Compute x = ys[0] * ys[1] * ... * ys[k-1]
+ */
+int uc_mul_multi(uc_int *x, uc_int *ys, int k)
+{
+    int i, res;
+    uc_int tmp;
+
+    if ( k < 1 )
+        return UC_INPUT_ERR;
+
+    res = UC_OK;
+    if ( (res = uc_init(&tmp)) != UC_OK )
+        return res;
+
+    /* x = 1 */
+    if ( (res = uc_set_i(x, 1)) != UC_OK )
+        goto cleanup;
+
+    for ( i = 0; i < k; ++i )
+    {
+        /* x = x * ys[i] */
+        if ( (res = uc_mul(&tmp, x, ys + i)) != UC_OK ||
+             (res = uc_copy(x, &tmp)) != UC_OK )
+        {
+            goto cleanup;
+        }
+    }
+
+cleanup:
+    uc_free(&tmp);
+
+    return res;
+
+}
+
+/*
  * Computes x = y^2
  */
 int uc_sqrd(uc_int *x, uc_int *y)
@@ -1018,6 +1054,36 @@ int uc_exp(uc_int *z, uc_int *x, uc_int *y)
 
 cleanup:
     uc_free(&tmp);
+
+    return res;
+}
+
+/*
+ * Compute z = x ^ y
+ */
+int uc_exp_i(uc_int *z, uc_int *x, int y)
+{
+    int res;
+    uc_int yt;
+
+    res = UC_OK;
+
+    if ( (res = uc_init(&yt)) != UC_OK )
+        return res;
+
+
+    printf("x = "); uc_debug_print_int_radix(x, 10);
+    printf("yt = "); uc_debug_print_int_radix(&yt, 10);
+    if ( (res = uc_set_i(&yt, y)) != UC_OK ||
+         (res = uc_exp(z, x, &yt)) != UC_OK )
+    {
+        goto cleanup;
+    }
+
+cleanup:
+    uc_free(&yt);
+
+    printf("z = "); uc_debug_print_int_radix(z, 10);
 
     return res;
 }
@@ -1576,6 +1642,163 @@ static uc_word _uc_gcd_word(uc_word x, uc_word y)
     }
 
     return g * y;
+}
+
+/*
+ * Converts integer to residue number system.
+ *
+ * Formally:
+ * For integer x and moduli ms[0], ms[1], ..., ms[k-1], compute
+ *     x[i] = x mod ms[i]
+ * for 0 <= i < k.
+ */
+int uc_int2rns(uc_int *xs, uc_int *x, uc_int *ms, int k)
+{
+    int res, l;
+    uc_int M, tmp;
+
+    /* Base Case 1 */
+    if ( k == 1 )
+        return uc_mod(xs, x, ms);
+
+    /* Base Case 2 */
+    if ( k == 2 )
+    {
+        if ( (res = uc_mod(xs, x, ms)) != UC_OK )
+            return res;
+        return uc_mod(xs + 1, x, ms + 1);
+    }
+
+    if ( (res = uc_init_multi(&M, &tmp, 0, 0, 0, 0)) != UC_OK )
+        return res;
+
+
+    l = k / 2;
+
+    /* "Left" side of recursion */
+    if ( (res = uc_mul_multi(&M, ms, l)) != UC_OK ||
+         (res = uc_mod(&tmp, x, &M)) != UC_OK ||
+         (res = uc_int2rns(xs, &tmp, ms, l)) != UC_OK )
+    {
+        goto cleanup;
+    }
+
+    /* "Right" side of recursion */
+    if ( (res = uc_mul_multi(&M, ms + l, k - l)) != UC_OK ||
+         (res = uc_mod(&tmp, x, &M)) != UC_OK ||
+         (res = uc_int2rns(xs + l, x, ms + l, k - l)) != UC_OK )
+    {
+        goto cleanup;
+    }
+
+cleanup:
+    uc_free(&M);
+    uc_free(&tmp);
+
+    return res;
+}
+
+/*
+ * Chinese Remainder Theorem. Formally:
+ *
+ * Compute x s.t.
+ *   0 <= x < ms[0] * ms[1] * ... * ms[k-1]
+ * and
+ *  x = xs[i] mod ms[i] for all 0 <= i < k.
+ */
+int uc_rns2int(uc_int *x, uc_int *xs, uc_int *ms, int k)
+{
+    int res, l;
+    uc_int m1, m2, x1, x2;
+    uc_int lambda1, lambda2;
+    uc_int tmp, u, v;
+
+    /* Recursion base case */
+    if ( k == 1 )
+        return uc_copy(x, xs);
+
+    /* Initialize local variables */
+    if ( (res = uc_init_multi(&m1, &m2, &x1, &x2, &lambda1, &lambda2)) != UC_OK )
+        return res;
+    if ( (res = uc_init_multi(&tmp, &u, &v, 0, 0, 0)) != UC_OK )
+        goto cleanup2;
+
+    /* Recursion */
+
+    l = k / 2;
+
+    uc_rns2int(&x1, xs, ms, l);
+    uc_rns2int(&x2, xs + l, ms + l, k - l);
+
+    /* Combine result */
+
+    /*
+     * Compute u, v s.t. u * m1 + v * m2 = 1
+     */
+    uc_mul_multi(&m1, ms, l);
+    uc_mul_multi(&m2, ms + l, k - l);
+    uc_egcd(&tmp, &u, &v, &m1, &m2);
+
+    /* Ensure that u is non-negative */
+    if ( uc_is_neg(&u) )
+    {
+        if ( (res = uc_add(&tmp, &u, &m2)) != UC_OK ||
+             (res = uc_copy(&u, &tmp)) != UC_OK )
+        {
+            goto cleanup1;
+        }
+        assert(!uc_is_neg(&u));
+    }
+
+    /* Ensure that v is non-negative */
+    if ( uc_is_neg(&v) )
+    {
+        if ( (res = uc_add(&tmp, &v, &m1)) != UC_OK ||
+             (res = uc_copy(&v, &tmp)) != UC_OK )
+        {
+            goto cleanup1;
+        }
+        assert(!uc_is_neg(&v));
+    }
+
+    /*
+     * lambda1 = u * x2 (mod m2)
+     * lambda2 = v * x1 (mod m2)
+     */
+    if ( (res = uc_mul_mod(&lambda1, &u, &x2, &m2)) != UC_OK ||
+         (res = uc_mul_mod(&lambda2, &v, &x1, &m1)) != UC_OK )
+    {
+        goto cleanup1;
+    }
+
+    /*
+     * x = lambda1 * m1 + lambda2 * m2
+     */
+    if ( (res = uc_mul(x, &lambda1, &m1)) != UC_OK ||
+         (res = uc_mul(&tmp, &lambda2, &m2)) != UC_OK ||
+         (res = uc_add(&u, x, &tmp)) != UC_OK ||
+         (res = uc_copy(x, &u)) != UC_OK )
+    {
+        goto cleanup1;
+    }
+
+    /* Ensure that x < m1 * m2 */
+    uc_mul(&u, &m1, &m2);
+    if ( uc_gte(x, &u) )
+    {
+        if ( (res = uc_sub(&v, x, &u)) != UC_OK ||
+             (res = uc_copy(x, &v)) != UC_OK )
+        {
+            goto cleanup1;
+        }
+    }
+
+cleanup1:
+    uc_free_multi(&tmp, &u, &v, 0, 0, 0);
+cleanup2:
+    uc_free_multi(&m1, &m2, &x1, &x2, &lambda1, &lambda2);
+
+    return res;
 }
 
 /*

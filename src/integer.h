@@ -113,10 +113,12 @@ int uc_add_d(uc_int *z, uc_int *x, uc_digit d);
 int uc_sub(uc_int *z, uc_int *x, uc_int *y);
 int uc_mul(uc_int *z, uc_int *x, uc_int *y);
 int uc_mul_d(uc_int *z, uc_int *x, uc_digit d);
+int uc_mul_multi(uc_int *x, uc_int *ys, int k);
 int uc_sqrd(uc_int *x, uc_int *y);
 int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 int uc_div_2(uc_int *x, uc_int *y);
 int uc_exp(uc_int *z, uc_int *x, uc_int *y);
+int uc_exp_i(uc_int *z, uc_int *x, int y);
 
 
 int uc_lshb(uc_int *x, uc_int *y, int n);
@@ -149,6 +151,10 @@ int uc_mod(uc_int *x, uc_int *y, uc_int *m);
 int uc_gcd(uc_int *z, uc_int *x, uc_int *y);
 uc_word uc_gcd_word(uc_word x, uc_word y);
 int uc_egcd(uc_int *g, uc_int *u, uc_int *v, uc_int *a, uc_int *b);
+
+
+int uc_int2rns(uc_int *xs, uc_int *x, uc_int *ms, int k);
+int uc_rns2int(uc_int *x, uc_int *xs, uc_int *ms, int k);
 
 /*
  * Conversion
