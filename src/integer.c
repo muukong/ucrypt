@@ -668,13 +668,13 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
  */
 int uc_mul(uc_int *z, uc_int *x, uc_int *y)
 {
-    int status;
+    int res;
 
-    status = _uc_mul(z, x, y);
+    res = _uc_mul(z, x, y);
     if ( x->sign != y->sign )
         z->sign = UC_NEG;
 
-    return status;
+    return res;
 }
 
 /*
