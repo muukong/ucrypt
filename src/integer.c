@@ -346,8 +346,6 @@ int uc_copy(uc_int *x, uc_int *y)
 {
     int i;
 
-    uc_set_zero(x);
-
     if ( y->used > x->used )
         uc_grow(x, y->used);
 
