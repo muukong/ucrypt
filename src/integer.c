@@ -266,6 +266,7 @@ int uc_set_i(uc_int *x, int n)
  */
 int uc_set_l(uc_int *x, long n)
 {
+    uc_set_zero(x);
     uc_grow(x, sizeof(n) / sizeof(uc_digit) + 1);
 
     if ( n < 0 )
@@ -305,6 +306,7 @@ int uc_set_d(uc_int *x, uc_digit n)
 
 int uc_set_w(uc_int *x, uc_word n)
 {
+    uc_set_zero(x);
     uc_grow(x, sizeof(n) / sizeof(uc_word) + 2);
 
     if ( n < 0 )
@@ -343,6 +345,8 @@ int uc_set_w(uc_int *x, uc_word n)
 int uc_copy(uc_int *x, uc_int *y)
 {
     int i;
+
+    uc_set_zero(x);
 
     if ( y->used > x->used )
         uc_grow(x, y->used);
@@ -1308,6 +1312,8 @@ int uc_mul_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
     int res;
     uc_int tmp;
 
+    res = UC_OK;
+
     if ( (res = uc_init(&tmp)) != UC_OK )
         return res;
 
@@ -1335,6 +1341,8 @@ int uc_mod_inv(uc_int *x, uc_int *y, uc_int *m)
 {
     int res;
     uc_int c, w, q, r, yt, tmp;
+
+    res = UC_OK;
 
     if ((res = uc_init_multi(&c, &tmp, &w, &q, &r, &yt)) != UC_OK )
         return res;
@@ -1402,6 +1410,8 @@ int uc_mod(uc_int *x, uc_int *y, uc_int *m)
 {
     int res;
     uc_int qt;
+
+    res = UC_OK;
 
     /* Check that y >= 0 and m > 0 */
     if ( uc_is_neg(y) || !uc_is_pos(m) )
@@ -1479,8 +1489,11 @@ int uc_egcd(uc_int *g, uc_int *u, uc_int *v, uc_int *a, uc_int *b)
     if ( (res = uc_init_multi(&w, &x, &q, &r, &bt, &tmp)) != UC_OK )
         return res;
 
-    if ( (res = uc_copy(g, a) != UC_OK) )
+    if ( (res = uc_copy(g, a) != UC_OK) ||
+         (res = uc_copy(&bt, b)) != UC_OK )
+    {
         goto cleanup;
+    }
 
     /* (u, w) <-- (1, 0) */
     if ( (res = uc_set_i(u, 1)) != UC_OK ||
@@ -1496,14 +1509,14 @@ int uc_egcd(uc_int *g, uc_int *u, uc_int *v, uc_int *a, uc_int *b)
         goto cleanup;
     }
 
-    while ( !uc_is_zero(b) )
+    while ( !uc_is_zero(&bt) )
     {
-        if ( (res = uc_div(&q, &r, g, b)) != UC_OK )
+        if ( (res = uc_div(&q, &r, g, &bt)) != UC_OK )
             goto cleanup;
 
         /* (a, b) <-- (b, r) */
-        if ( (res = uc_copy(g, b)) != UC_OK ||
-             (res = uc_copy(b, &r)) != UC_OK )
+        if ( (res = uc_copy(g, &bt)) != UC_OK ||
+             (res = uc_copy(&bt, &r)) != UC_OK )
         {
             goto cleanup;
         }
