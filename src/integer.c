@@ -1071,9 +1071,6 @@ int uc_exp_i(uc_int *z, uc_int *x, int y)
     if ( (res = uc_init(&yt)) != UC_OK )
         return res;
 
-
-    printf("x = "); uc_debug_print_int_radix(x, 10);
-    printf("yt = "); uc_debug_print_int_radix(&yt, 10);
     if ( (res = uc_set_i(&yt, y)) != UC_OK ||
          (res = uc_exp(z, x, &yt)) != UC_OK )
     {
@@ -1082,8 +1079,6 @@ int uc_exp_i(uc_int *z, uc_int *x, int y)
 
 cleanup:
     uc_free(&yt);
-
-    printf("z = "); uc_debug_print_int_radix(z, 10);
 
     return res;
 }
