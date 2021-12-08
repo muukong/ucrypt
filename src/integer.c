@@ -1880,7 +1880,7 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
  * The required string length n (which includes the null-byte) can be computed with
  * the helper function uc_write_radix_len(..).
  */
-int uc_write_radix(char *y, int n, uc_int *x, int radix)
+int uc_write_radix_slow(char *s, int n, uc_int *x, int radix)
 {
     int sign, digit, digit_ctr;
     uc_int xt;                  /* temporary copy of x */
@@ -1894,8 +1894,8 @@ int uc_write_radix(char *y, int n, uc_int *x, int radix)
      */
     if ( uc_is_zero(x) )
     {
-        y[0] = '0';
-        y[1] = 0;
+        s[0] = '0';
+        s[1] = 0;
         return UC_OK;
     }
 
@@ -1931,21 +1931,21 @@ int uc_write_radix(char *y, int n, uc_int *x, int radix)
 
         assert(0 <= digit && digit < radix);
         if (0 <= digit && digit < 10)
-            y[digit_ctr++] = '0' + digit;
+            s[digit_ctr++] = '0' + digit;
         else
-            y[digit_ctr++] = 'A' + (digit - 10);
+            s[digit_ctr++] = 'A' + (digit - 10);
 
         uc_copy(&xt, &q);
     }
 
     /* Append negative sign if necessary */
     if ( sign == UC_NEG )
-        y[digit_ctr++] = '-';
+        s[digit_ctr++] = '-';
 
     /* Null-terminate string */
-    y[digit_ctr] = 0;
+    s[digit_ctr] = 0;
 
-    reverse_string(y, digit_ctr);
+    reverse_string(s, digit_ctr);
 
     uc_free(&xt);
     uc_free(&q);
@@ -1955,11 +1955,11 @@ int uc_write_radix(char *y, int n, uc_int *x, int radix)
     return UC_OK;
 }
 
-int uc_write_radix_fast(char *s, int n, uc_int *A, int B)
+int uc_write_radix(char *s, int n, uc_int *x, int radix)
 {
     int res;
     int i, k;
-    uc_int bt, tmp1, tmp2;
+    uc_int rt, tmp1, tmp2;
     uc_int q, r;
     int s1_len, s2_len;
     char *s1, *s2;
@@ -1967,7 +1967,7 @@ int uc_write_radix_fast(char *s, int n, uc_int *A, int B)
     res = UC_OK;
 
     /* Initialize local variables */
-    if ( (res = uc_init_multi(&bt, &tmp1, &tmp2, &q, &r, 0)) != UC_OK )
+    if ((res = uc_init_multi(&rt, &tmp1, &tmp2, &q, &r, 0)) != UC_OK )
         return res;
 
     s1 = s2 = NULL;
@@ -1978,15 +1978,15 @@ int uc_write_radix_fast(char *s, int n, uc_int *A, int B)
         goto cleanup;
     }
 
-    if ( (res = uc_set_i(&bt, B)) != UC_OK )
+    if ((res = uc_set_i(&rt, radix)) != UC_OK )
         goto cleanup;
 
     /* Recursion base case */
-    if ( uc_lt(A, &bt) )
+    if ( uc_lt(x, &rt) )
     {
-        int digit = A->digits[0];
+        int digit = x->digits[0];
 
-        assert(0 <= digit && digit < B);
+        assert(0 <= digit && digit < radix);
         if (0 <= digit && digit < 10)
             s[0] = '0' + digit;
         else
@@ -1997,7 +1997,7 @@ int uc_write_radix_fast(char *s, int n, uc_int *A, int B)
     }
 
     /*
-     * Find k s.t. B^(2*k-2) <= A < B^(2*k)
+     * Find k s.t. radix^(2*k-2) <= A < radix^(2*k)
      *
      * We first approximate k by increasing k exponentially until we overshoot. Afterwards,
      * we reduce k until we have found the right one.
@@ -2005,33 +2005,33 @@ int uc_write_radix_fast(char *s, int n, uc_int *A, int B)
 
     for ( k = 2; ; k *= 2 )
     {
-        if ( (res = uc_exp_i(&tmp1, &bt, 2*k - 2)) != UC_OK )
+        if ((res = uc_exp_i(&tmp1, &rt, 2 * k - 2)) != UC_OK )
             goto cleanup;
 
-        if ( uc_gt(&tmp1, A) )
+        if ( uc_gt(&tmp1, x) )
             break;
     }
 
     while ( --k )
     {
-        if ( (res = uc_exp_i(&tmp1, &bt, 2*k - 2)) != UC_OK ||
-             (res = uc_exp_i(&tmp2, &bt, 2*k)) != UC_OK )
+        if ((res = uc_exp_i(&tmp1, &rt, 2 * k - 2)) != UC_OK ||
+            (res = uc_exp_i(&tmp2, &rt, 2 * k)) != UC_OK )
         {
             goto cleanup;
         }
 
-        if ( uc_lte(&tmp1, A) && uc_lt(A, &tmp2) )
+        if (uc_lte(&tmp1, x) && uc_lt(x, &tmp2) )
             break;
     }
 
-    if ( (res = uc_exp_i(&tmp1, &bt, k)) != UC_OK ||
-         (res = uc_div(&q, &r, A, &tmp1)) != UC_OK )
+    if ((res = uc_exp_i(&tmp1, &rt, k)) != UC_OK ||
+         (res = uc_div(&q, &r, x, &tmp1)) != UC_OK )
     {
         goto cleanup;
     }
 
-    uc_write_radix_fast(s1, n, &q, B);
-    uc_write_radix_fast(s2, n, &r, B);
+    uc_write_radix(s1, n, &q, radix);
+    uc_write_radix(s2, n, &r, radix);
 
     s1_len = strlen(s1);
     s2_len = strlen(s2);
@@ -2047,7 +2047,7 @@ int uc_write_radix_fast(char *s, int n, uc_int *A, int B)
 cleanup:
     free(s2);
     free(s1);
-    uc_free_multi(&bt, &tmp1, &tmp2, &q, &r, 0);
+    uc_free_multi(&rt, &tmp1, &tmp2, &q, &r, 0);
 
     return res;
 }
