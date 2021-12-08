@@ -1966,11 +1966,22 @@ int uc_write_radix_fast(char *s, int n, uc_int *A, int B)
 
     res = UC_OK;
 
-    memset(s, 0, n);
+    /* Initialize local variables */
+    if ( (res = uc_init_multi(&bt, &tmp1, &tmp2, &q, &r, 0)) != UC_OK )
+        return res;
 
-    uc_init_multi(&bt, &tmp1, &tmp2, &q, &r, 0);
-    uc_set_i(&bt, B);
+    s1 = s2 = NULL;
+    if ( (s1 = malloc(n)) == NULL ||
+         (s2 = malloc(n)) == NULL )
+    {
+        res = UC_MEM_ERR;
+        goto cleanup;
+    }
 
+    if ( (res = uc_set_i(&bt, B)) != UC_OK )
+        goto cleanup;
+
+    /* Recursion base case */
     if ( uc_lt(A, &bt) )
     {
         int digit = A->digits[0];
@@ -1981,50 +1992,62 @@ int uc_write_radix_fast(char *s, int n, uc_int *A, int B)
         else
             s[0] = 'A' + (digit - 10);
         s[1] = 0;
-        return UC_OK;
+
+        return res;
     }
 
-    s1 = malloc(n);
-    s2 = malloc(n);
+    /*
+     * Find k s.t. B^(2*k-2) <= A < B^(2*k)
+     *
+     * We first approximate k by increasing k exponentially until we overshoot. Afterwards,
+     * we reduce k until we have found the right one.
+     */
 
-    for ( k = 1; ; ++k )
+    for ( k = 2; ; k *= 2 )
     {
-        uc_exp_i(&tmp1, &bt, 2*k - 2);
-        uc_exp_i(&tmp2, &bt, 2*k);
+        if ( (res = uc_exp_i(&tmp1, &bt, 2*k - 2)) != UC_OK )
+            goto cleanup;
+
+        if ( uc_gt(&tmp1, A) )
+            break;
+    }
+
+    while ( --k )
+    {
+        if ( (res = uc_exp_i(&tmp1, &bt, 2*k - 2)) != UC_OK ||
+             (res = uc_exp_i(&tmp2, &bt, 2*k)) != UC_OK )
+        {
+            goto cleanup;
+        }
 
         if ( uc_lte(&tmp1, A) && uc_lt(A, &tmp2) )
-        {
             break;
-        }
     }
 
-    uc_exp_i(&tmp1, &bt, k);
-    uc_div(&q, &r, A, &tmp1);
+    if ( (res = uc_exp_i(&tmp1, &bt, k)) != UC_OK ||
+         (res = uc_div(&q, &r, A, &tmp1)) != UC_OK )
+    {
+        goto cleanup;
+    }
 
     uc_write_radix_fast(s1, n, &q, B);
     uc_write_radix_fast(s2, n, &r, B);
 
     s1_len = strlen(s1);
     s2_len = strlen(s2);
-    strcpy(s, s1);
 
-    memset(s, 0, n);
+    for ( i = 0; i < s1_len; ++i )
+        *s++ = s1[i];
+    for ( i = 0; i < k - s2_len; ++i )
+        *s++ = '0';
+    for ( i = 0; i < s2_len; ++i )
+        *s++ = s2[i];
+    *s = 0;
 
-    int idx = 0;
-    for ( i = 0; i < s1_len; ++i, ++idx )
-    {
-        s[idx] = s1[i];
-    }
-    for ( i = 0; i < k - s2_len; ++i, ++idx)
-    {
-        s[idx] = '0';
-    }
-    for ( i = 0; i < s2_len; ++i, ++idx)
-        s[idx] = s2[i];
-    s[idx] = 0;
-
-    free(s1);
+cleanup:
     free(s2);
+    free(s1);
+    uc_free_multi(&bt, &tmp1, &tmp2, &q, &r, 0);
 
     return res;
 }
