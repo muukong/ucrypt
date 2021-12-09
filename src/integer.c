@@ -617,18 +617,9 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
 
     res = UC_OK;
 
-    /* Ensure that z is initialized with 0 and that there is enough space to hold the result */
-    if ( (res = uc_set_zero(z)) != UC_OK ||
-         (res = uc_grow(z, x->used + 1))  != UC_OK )
-    {
+    /* Ensure that z can hold result */
+    if ( (res = uc_grow(z, x->used))  != UC_OK )
         return res;
-    }
-
-    /*
-     * We can clamp at the end (this works because we do not use any other uc_ functions
-     * in the remainder of this function).
-     */
-    z->used = z->alloc;
 
     int i;
     uc_digit c = 0; // carry
@@ -652,7 +643,11 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
         z->digits[i] = tmp & UC_DIGIT_MASK;
     }
 
-    uc_clamp(z);
+    for ( ; i < z->alloc; ++i )
+        z->digits[i] = 0;
+
+    z->used = x->used;
+    res = uc_clamp(z);
 
     return res;
 }
@@ -1955,13 +1950,14 @@ int uc_write_radix(char *s, int n, uc_int *x, int radix)
     int i, k;
     uc_int rt, tmp1, tmp2;
     uc_int q, r;
+    uc_int xt;
     int s1_len, s2_len;
     char *s1, *s2;
 
     res = UC_OK;
 
     /* Initialize local variables */
-    if ((res = uc_init_multi(&rt, &tmp1, &tmp2, &q, &r, 0)) != UC_OK )
+    if ((res = uc_init_multi(&rt, &tmp1, &tmp2, &q, &r, &xt)) != UC_OK )
         return res;
 
     s1 = s2 = NULL;
@@ -1975,10 +1971,18 @@ int uc_write_radix(char *s, int n, uc_int *x, int radix)
     if ((res = uc_set_i(&rt, radix)) != UC_OK )
         goto cleanup;
 
+    /*
+     * We work with a non-negative copy of x (note that x is therefore never
+     * negative in recursive function calls). We set the sign at the end.
+     */
+    if ( (res = uc_copy(&xt, x)) != UC_OK )
+        goto cleanup;
+    xt.sign = UC_POS;
+
     /* Recursion base case */
-    if ( uc_lt(x, &rt) )
+    if ( uc_lt(&xt, &rt) )
     {
-        int digit = x->digits[0];
+        int digit = xt.digits[0];
 
         assert(0 <= digit && digit < radix);
         if (0 <= digit && digit < 10)
@@ -2002,7 +2006,7 @@ int uc_write_radix(char *s, int n, uc_int *x, int radix)
         if ((res = uc_exp_i(&tmp1, &rt, 2 * k - 2)) != UC_OK )
             goto cleanup;
 
-        if ( uc_gt(&tmp1, x) )
+        if ( uc_gt(&tmp1, &xt) )
             break;
     }
 
@@ -2014,12 +2018,12 @@ int uc_write_radix(char *s, int n, uc_int *x, int radix)
             goto cleanup;
         }
 
-        if (uc_lte(&tmp1, x) && uc_lt(x, &tmp2) )
+        if (uc_lte(&tmp1, &xt) && uc_lt(&xt, &tmp2) )
             break;
     }
 
     if ((res = uc_exp_i(&tmp1, &rt, k)) != UC_OK ||
-         (res = uc_div(&q, &r, x, &tmp1)) != UC_OK )
+         (res = uc_div(&q, &r, &xt, &tmp1)) != UC_OK )
     {
         goto cleanup;
     }
@@ -2029,6 +2033,9 @@ int uc_write_radix(char *s, int n, uc_int *x, int radix)
 
     s1_len = strlen(s1);
     s2_len = strlen(s2);
+
+    if (uc_is_neg(x) )
+        *s++ = '-';
 
     for ( i = 0; i < s1_len; ++i )
         *s++ = s1[i];
@@ -2041,7 +2048,7 @@ int uc_write_radix(char *s, int n, uc_int *x, int radix)
 cleanup:
     free(s2);
     free(s1);
-    uc_free_multi(&rt, &tmp1, &tmp2, &q, &r, 0);
+    uc_free_multi(&rt, &tmp1, &tmp2, &q, &r, &xt);
 
     return res;
 }
