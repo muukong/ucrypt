@@ -793,16 +793,10 @@ int uc_sqrd(uc_int *x, uc_int *y)
 
 /*
  * Compute x = 2 * y
- *
- * TODO: Use a more efficient algorithm
  */
 int uc_mul_2(uc_int *x, uc_int *y)
 {
-    uc_int tmp;
-    int status = uc_init_i(&tmp, 2);
-    uc_mul(x, y, &tmp);
-    uc_free(&tmp);
-    return status;
+    return uc_lshb(x, y, 1);
 }
 
 // TODO: add to header file
