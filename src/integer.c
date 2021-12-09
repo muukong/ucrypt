@@ -14,6 +14,7 @@
 static int _uc_add(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_sub(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_mul(uc_int *z, uc_int *x, uc_int *y);
+static int _uc_mul_karatsuba(uc_int *C, uc_int *A, uc_int *B, int N);
 static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 
 int _uc_write_radix_slow(char *s, int *n, uc_int *x, int radix);
@@ -535,6 +536,84 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
 
     z->used = x->used + 1;
     res = uc_clamp(z);
+
+    return res;
+}
+
+/*
+ * Compute z = x * y with Karatsuba method.
+ *
+ * Warning: This naive implementation is slower than uc_mul, even for very large inputs
+ * (e.g. 15k bits).
+ * TODO: Improve performance.
+ */
+int uc_mul_karatsuba(uc_int *z, uc_int *x, uc_int *y)
+{
+
+    if ( x->used != y->used )
+        return UC_INPUT_ERR;
+
+    return _uc_mul_karatsuba(z, x, y, 400);
+}
+
+int _uc_mul_karatsuba(uc_int *C, uc_int *A, uc_int *B, int N)
+{
+    int k, n, res;
+    int sign_A, sign_B;
+    uc_int tmp1, tmp2;
+    uc_int a0, a1, b0, b1;
+    uc_int c0, c1, c2;
+
+    res = UC_OK;
+
+    n = A->used;
+
+    /* Base case */
+    if ( n < N )
+        return uc_mul(C, A, B);
+
+    uc_init_multi(&tmp1, &tmp2, &a0, &a1, &b0, &b1);
+    uc_init_multi(&c0, &c1, &c2, 0, 0, 0);
+
+    k = n / 2;
+
+    /* Compute Base^k */
+    uc_set_i(&tmp1, 1);
+    uc_lshd(&tmp1, k);
+
+    uc_div(&a1, &a0, A, &tmp1);
+    uc_div(&b1, &b0, B, &tmp1);
+
+    uc_sub(&tmp1, &a0, &a1);
+    uc_sub(&tmp2, &b0, &b1);
+
+    sign_A = tmp1.sign;
+    tmp1.sign = UC_POS;
+    sign_B = tmp2.sign;
+    tmp2.sign = UC_POS;
+
+    _uc_mul_karatsuba(&c0, &a0, &b0, N);
+    _uc_mul_karatsuba(&c1, &a1, &b1, N);
+    _uc_mul_karatsuba(&c2, &tmp1, &tmp2, N);
+
+    uc_copy(C, &c0);
+
+    uc_add(&tmp1, &c0, &c1);
+    if ( sign_A == sign_B )
+        uc_sub(&tmp1, &tmp1, &c2);
+    else
+        uc_add(&tmp1, &tmp1, &c2);
+    uc_lshd(&tmp1, k);
+    uc_add(C, C, &tmp1);
+
+    uc_copy(&tmp1, &c1);
+    uc_lshd(&tmp1, 2 * k);
+    uc_add(C, C, &tmp1);
+
+
+cleanup:
+    uc_free_multi(&tmp1, &tmp2, &a0, &a1, &b0, &b1);
+    uc_free_multi(&c0, &c1, &c2, 0, 0, 0);
 
     return res;
 }
