@@ -687,6 +687,29 @@ int uc_sub(uc_int *z, uc_int *x, uc_int *y)
     return status;
 }
 
+int uc_sub_d(uc_int *z, uc_int *x, uc_digit y)
+{
+    int res;
+    uc_int yt;
+
+    res = UC_OK;
+
+    if ( (res = uc_init(&yt)) != UC_OK )
+        return res;
+
+    if ( (res = uc_set_d(&yt, y)) != UC_OK ||
+         (res = uc_sub(z, x, &yt)) != UC_OK )
+    {
+        goto cleanup;
+    }
+
+cleanup:
+    uc_free(&yt);
+
+    return res;
+}
+
+
 /*
  * Compute z = x - y with |x| >= |y| and x, y >= 0
  */
