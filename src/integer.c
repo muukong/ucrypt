@@ -1918,12 +1918,16 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
  */
 int uc_write_radix_slow(char *s, int n, uc_int *x, int radix)
 {
-    int sign, digit, digit_ctr;
-    uc_int xt;                  /* temporary copy of x */
-    uc_int q, r, rad;           /* temporary helper variables */
+    int res;
+    int sign, digit_ctr;
+    uc_int xt;                      /* temporary copy of x */
+    uc_int q;
+    uc_digit r;
 
-    if ( n < 2 )
-        UC_INPUT_ERR;
+    res = UC_OK;
+
+    if ( radix < 2 || radix > 16 )
+        return UC_INPUT_ERR;
 
     /*
      * If x == 0
@@ -1935,12 +1939,11 @@ int uc_write_radix_slow(char *s, int n, uc_int *x, int radix)
         return UC_OK;
     }
 
-    uc_init_multi(&xt, &q, &r, &rad, 0, 0);
+    if ( (res = uc_init_multi(&xt, &q, 0, 0, 0, 0)) != UC_OK )
+        return res;
 
-    digit_ctr = 0;
-
-    uc_copy(&xt, x);
-    uc_init_i(&rad, radix);
+    if ( (res = uc_copy(&xt, x)) != UC_OK )
+        goto cleanup;
 
     /*
      * If xt is negative, we remember to add a negative sign in the beginning and
@@ -1957,19 +1960,18 @@ int uc_write_radix_slow(char *s, int n, uc_int *x, int radix)
     /*
      * Create output string in reverse order
      */
+
+    digit_ctr = 0;
     while ( !uc_is_zero(&xt) )
     {
         uc_set_zero(&q);
-        uc_set_zero(&r);
-        uc_div(&q, &r, &xt, &rad);
+        uc_div_d(&q, &r, &xt, radix);
 
-        digit = r.digits[0];
-
-        assert(0 <= digit && digit < radix);
-        if (0 <= digit && digit < 10)
-            s[digit_ctr++] = '0' + digit;
+        assert(0 <= r && r < radix);
+        if (0 <= r && r < 10)
+            s[digit_ctr++] = '0' + r;
         else
-            s[digit_ctr++] = 'A' + (digit - 10);
+            s[digit_ctr++] = 'A' + (r - 10);
 
         uc_copy(&xt, &q);
     }
@@ -1983,16 +1985,12 @@ int uc_write_radix_slow(char *s, int n, uc_int *x, int radix)
 
     reverse_string(s, digit_ctr);
 
+cleanup:
     uc_free(&xt);
     uc_free(&q);
-    uc_free(&r);
-    uc_free(&rad);
 
-    return UC_OK;
+    return res;
 }
-
-
-
 
 int uc_write_radix(char *s, int n, uc_int *x, int radix)
 {
