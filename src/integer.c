@@ -705,17 +705,46 @@ static int _uc_mul(uc_int *z, uc_int *x, uc_int *y)
 }
 
 /*
- * Compute z = x * d for z, x UC integers and digit d.
- *
- * TODO: Use another algorithm to improve speed
+ * Compute z = x * y for z, x UC integers and UC digit y.
  */
-int uc_mul_d(uc_int *z, uc_int *x, uc_digit d)
+int uc_mul_d(uc_int *z, uc_int *x, uc_digit y)
 {
-    uc_int tmp;
-    uc_init_d(&tmp, d);
-    int status = uc_mul(z, x, &tmp);
-    uc_free(&tmp);
-    return status;
+    int i, res;
+    uc_word u, r;
+
+    res = UC_OK;
+
+    /*
+     * A few special cases
+     */
+    if (uc_is_zero(x) || y == 0 )
+        return uc_set_zero(z);
+    if (y == 0 )
+        return uc_copy(z, x);
+    if ( uc_is_one(x) )
+        return uc_set_i(z, y);
+
+    /* Ensure that z can hold result */
+    if ( (res = uc_grow(z, x->used + 1)) != UC_OK )
+        return res;
+
+    u = 0;
+    for ( i = 0; i < x->used; ++i )
+    {
+        r = u + ((uc_word) x->digits[i]) * y;
+        z->digits[i] = r % UC_INT_BASE;
+        u = r / UC_INT_BASE;
+    }
+    z->digits[i++] = u;
+
+    for ( ; i < z->used; ++i )
+        z->digits[i] = 0;
+
+    z->sign = x->sign;
+
+    if ( z->used < x->used + 1 )
+        z->used = x->used + 1;
+    return uc_clamp(z);
 }
 
 /*

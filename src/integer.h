@@ -98,6 +98,7 @@ int uc_cmp_mag(uc_int *x, uc_int *y);
 #define uc_gte_mag(x, y) (uc_cmp_mag((x),(y)) != UC_LT)         // >=
 
 #define uc_is_zero(x) ((x)->used == 1 && (x)->digits[0] == 0)
+#define uc_is_one(x) ((x)->used == 1 && (x)->digits[0] == 1)
 #define uc_is_pos(x) ((x)->sign == UC_POS && !uc_is_zero(x))
 #define uc_is_neg(x) ((x)->sign == UC_NEG)
 
@@ -112,7 +113,7 @@ int uc_add(uc_int *z, uc_int *x, uc_int *y);
 int uc_add_d(uc_int *z, uc_int *x, uc_digit d);
 int uc_sub(uc_int *z, uc_int *x, uc_int *y);
 int uc_mul(uc_int *z, uc_int *x, uc_int *y);
-int uc_mul_d(uc_int *z, uc_int *x, uc_digit d);
+int uc_mul_d(uc_int *z, uc_int *x, uc_digit y);
 int uc_mul_multi(uc_int *x, uc_int *ys, int k);
 int uc_sqrd(uc_int *x, uc_int *y);
 int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
