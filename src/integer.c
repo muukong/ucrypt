@@ -2031,8 +2031,6 @@ int _uc_write_radix(char *s, int *n, uc_int *x, int radix)
             break;
     }
 
-    printf("k = %d\n", k);
-
     /*
      * Compute q and r s.t. A = q * B^k + r
      */
