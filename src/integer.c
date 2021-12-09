@@ -16,6 +16,8 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_mul(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 
+int _uc_write_radix(char *s, int *n, uc_int *x, int radix);
+
 static int _check_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 
 static uc_word _uc_gcd_word(uc_word x, uc_word y);
@@ -1944,29 +1946,35 @@ int uc_write_radix_slow(char *s, int n, uc_int *x, int radix)
     return UC_OK;
 }
 
+
+
+
 int uc_write_radix(char *s, int n, uc_int *x, int radix)
+{
+    int res;
+    int s_len;
+
+    s_len = 0;
+
+    res = _uc_write_radix(s, &s_len, x, radix);
+    s[s_len] = 0;
+    return res;
+}
+
+int _uc_write_radix(char *s, int *n, uc_int *x, int radix)
 {
     int res;
     int i, k;
     uc_int rt, tmp1, tmp2;
     uc_int q, r;
     uc_int xt;
-    int s1_len, s2_len;
-    char *s1, *s2;
+    int q_str_len, r_str_len;
 
     res = UC_OK;
 
     /* Initialize local variables */
     if ((res = uc_init_multi(&rt, &tmp1, &tmp2, &q, &r, &xt)) != UC_OK )
         return res;
-
-    s1 = s2 = NULL;
-    if ( (s1 = malloc(n)) == NULL ||
-         (s2 = malloc(n)) == NULL )
-    {
-        res = UC_MEM_ERR;
-        goto cleanup;
-    }
 
     if ((res = uc_set_i(&rt, radix)) != UC_OK )
         goto cleanup;
@@ -1989,7 +1997,8 @@ int uc_write_radix(char *s, int n, uc_int *x, int radix)
             s[0] = '0' + digit;
         else
             s[0] = 'A' + (digit - 10);
-        s[1] = 0;
+
+        *n = 1;
 
         return res;
     }
@@ -2022,32 +2031,35 @@ int uc_write_radix(char *s, int n, uc_int *x, int radix)
             break;
     }
 
-    if ((res = uc_exp_i(&tmp1, &rt, k)) != UC_OK ||
+    printf("k = %d\n", k);
+
+    /*
+     * Compute q and r s.t. A = q * B^k + r
+     */
+    if ( (res = uc_exp_i(&tmp1, &rt, k)) != UC_OK ||
          (res = uc_div(&q, &r, &xt, &tmp1)) != UC_OK )
     {
         goto cleanup;
     }
 
-    uc_write_radix(s1, n, &q, radix);
-    uc_write_radix(s2, n, &r, radix);
+    /*
+     * Invoke function recursively ond q and r and then combine result as follows:
+     *      str(q) || '0'^{k - len(str(r))} || str(r)
+     *
+     * Note: To avoid memory allocations in recursive invocations, we first compute
+     *      str(q) || str(r)
+     * and then shift insert the 0's in the middle.
+     */
 
-    s1_len = strlen(s1);
-    s2_len = strlen(s2);
+    _uc_write_radix(s, &q_str_len, &q, radix);
+    _uc_write_radix(s + q_str_len, &r_str_len, &r, radix);
 
-    if (uc_is_neg(x) )
-        *s++ = '-';
+    int shift = k - r_str_len ;
+    rsh_string(s + q_str_len, r_str_len, shift, '0');
 
-    for ( i = 0; i < s1_len; ++i )
-        *s++ = s1[i];
-    for ( i = 0; i < k - s2_len; ++i )
-        *s++ = '0';
-    for ( i = 0; i < s2_len; ++i )
-        *s++ = s2[i];
-    *s = 0;
+    *n = q_str_len + shift + r_str_len; /* Calculate total length */
 
 cleanup:
-    free(s2);
-    free(s1);
     uc_free_multi(&rt, &tmp1, &tmp2, &q, &r, &xt);
 
     return res;
