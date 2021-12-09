@@ -981,6 +981,51 @@ int uc_div_2(uc_int *x, uc_int *y)
 }
 
 /*
+ * Compute UC integer q and UC digit r s.t. x = q * y + r
+ */
+int uc_div_d(uc_int *q, uc_digit *r, uc_int *x, uc_digit y)
+{
+    int i, res;
+    uc_word w, t;
+
+    res = UC_OK;
+
+    if ( y == 0 )
+        return UC_INPUT_ERR;
+
+    if ( uc_is_zero(x) )
+    {
+        uc_set_zero(q);
+        *r = 0;
+    }
+
+    if ( (res = uc_grow(q, x->used)) != UC_OK )
+        return res;
+
+    w = 0;
+    for ( i = x->used - 1; i >= 0; --i )
+    {
+        w = (w << ((uc_word) UC_DIGIT_BITS)) + x->digits[i];
+        if ( w >= y )
+        {
+            t = w / y;
+            w %= y;
+        }
+        else
+            t = 0;
+
+        q->digits[i] = t;
+    }
+
+    *r = w;
+
+    q->used = x->used;
+    uc_clamp(q);
+
+    return res;
+}
+
+/*
  * Compute z = x ^ y for y >= 0.
  */
 int uc_exp(uc_int *z, uc_int *x, uc_int *y)
