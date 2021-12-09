@@ -137,6 +137,10 @@ int uc_count_bits(uc_int *x);
 /* Returns n-th bit of x (index starts at 0) */
 #define uc_nth_bit(x, n) (((x)->digits[n / UC_DIGIT_BITS] >> ((n) % UC_DIGIT_BITS)) & 1)
 
+#define UC_MAG(x) ((x) >= 0 ? (x) : (-(x)))         /* |x| */
+#define UC_MIN(x, y) ((x) <= (y) ? (x) : (y))       /* min(x, y) */
+#define UC_MAX(x, y) ((x) >= (y) ? (x) : (y))       /* max(x, y) */
+
 /*
  * Modular arithmetic
  */
