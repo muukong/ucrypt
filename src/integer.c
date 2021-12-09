@@ -543,8 +543,10 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
 /*
  * Compute z = x * y with Karatsuba method.
  *
- * Warning: This naive implementation is slower than uc_mul, even for very large inputs
+ * Warning:
+ * - This naive implementation is slower than uc_mul, even for very large inputs
  * (e.g. 15k bits).
+ * - Not safe for input aliasing
  * TODO: Improve performance.
  */
 int uc_mul_karatsuba(uc_int *z, uc_int *x, uc_int *y)
@@ -1115,15 +1117,18 @@ int uc_div_d(uc_int *q, uc_digit *r, uc_int *x, uc_digit y)
 
     res = UC_OK;
 
+    /* Cannot divide by zero */
     if ( y == 0 )
         return UC_INPUT_ERR;
 
+    /* Can take shortcut if x is zero */
     if ( uc_is_zero(x) )
     {
-        uc_set_zero(q);
         *r = 0;
+        return uc_set_zero(q);
     }
 
+    /* Make sure q can hold result */
     if ( (res = uc_grow(q, x->used)) != UC_OK )
         return res;
 
@@ -1155,12 +1160,13 @@ int uc_div_d(uc_int *q, uc_digit *r, uc_int *x, uc_digit y)
  */
 int uc_exp(uc_int *z, uc_int *x, uc_int *y)
 {
-    assert( !uc_is_neg(y) );
-
-    uc_int tmp;
+    uc_int xt, yt, tmp;
     int i, n, res;
 
     res = UC_OK;
+
+    if ( uc_is_neg(y) )
+        return UC_INPUT_ERR;
 
     /*
      * If y is zero, simply set z to 1.
@@ -1169,6 +1175,16 @@ int uc_exp(uc_int *z, uc_int *x, uc_int *y)
      */
     if ( uc_is_zero(y) )
         return uc_set_i(z, 1);
+
+    if ( (res = uc_init_multi(&xt, &yt, &tmp, 0, 0, 0)) != UC_OK )
+        return res;
+
+    /* Make copies of x and y to avoid aliasing */
+    if ( (res = uc_copy(&xt, x)) != UC_OK ||
+         (res = uc_copy(&yt, y)) != UC_OK )
+    {
+        goto cleanup;
+    }
 
     if ( (res = uc_init(&tmp)) != UC_OK ||
          (res = uc_set_i(z, 1)) != UC_OK )
@@ -1180,7 +1196,7 @@ int uc_exp(uc_int *z, uc_int *x, uc_int *y)
      * Square and multiply. (Note: we ignore the sign during this loop and
      * fix it later).
      */
-    n = uc_count_bits(y);
+    n = uc_count_bits(&yt);
     for ( i = n - 1; i >= 0; --i )
     {
         /* z = z * z */
@@ -1198,23 +1214,23 @@ int uc_exp(uc_int *z, uc_int *x, uc_int *y)
          * bit y_i.
          */
 
-        if ( (res = uc_mul(&tmp, z, x)) != UC_OK )
+        if ( (res = uc_mul(&tmp, z, &xt)) != UC_OK )
             goto cleanup;
 
-        if ( uc_nth_bit(y,i) == 1 )
+        if ( uc_nth_bit(&yt,i) == 1 )
             uc_copy(z, &tmp);
         else
             uc_copy(z, z);
     }
 
     /* Fix sign */
-    if ( uc_is_neg(x) && uc_is_odd(y) )
+    if ( uc_is_neg(&xt) && uc_is_odd(&yt) )
         z->sign = UC_NEG;
     else
         z->sign = UC_POS;
 
 cleanup:
-    uc_free(&tmp);
+    uc_free_multi(&xt, &yt, &tmp, 0, 0, 0);
 
     return res;
 }
