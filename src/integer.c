@@ -114,7 +114,7 @@ int uc_init_zero(uc_int *x)
 int uc_grow(uc_int *x, int n)
 {
     assert( x );
-    assert( n >= 0 );
+    assert( n >= 1 );
 
     int i;
     uc_digit *tmp;
@@ -494,50 +494,44 @@ int uc_add(uc_int *z, uc_int *x, uc_int *y)
 }
 
 /*
- * Compute z = x + y with |x| >= |y| and x, y >= 0
+ * Compute z = x + y for x >= y >= 0.
  */
 static int _uc_add(uc_int *z, uc_int *x, uc_int *y)
 {
     assert(uc_cmp_mag(x, y) != UC_LT);
 
-    int res;
+    int i, res;
+    uc_digit c, tmp;
 
     res = UC_OK;
 
     /* Ensure that z is initialized with 0 and that there is enough space to hold the result */
-    if ( (res = uc_set_zero(z)) != UC_OK ||
-         (res = uc_grow(z, x->used + 1)) != UC_OK )
-    {
+    if ( (res = uc_grow(z, x->used + 1)) != UC_OK )
         return res;
-    }
 
-    int i;
-    uc_digit c = 0;     // carry
+    c = 0;     /* carry */
+
     for ( i = 0; i < y->used; ++i )
     {
-        uc_digit tmp = x->digits[i] + y->digits[i] + c;
+        tmp = x->digits[i] + y->digits[i] + c;
         c = tmp >> UC_DIGIT_BITS;
         z->digits[i] = tmp & UC_DIGIT_MASK;
-        z->used = i + 1;
     }
 
     for ( ; i < x->used; ++i )
     {
-        uc_digit tmp = x->digits[i] + c;
+        tmp = x->digits[i] + c;
         c = tmp >> UC_DIGIT_BITS;
         z->digits[i] = tmp & UC_DIGIT_MASK;
-        z->used = i + 1;
     }
 
     if (c > 0 )
-    {
-        z->digits[i] = c;
-        z->used = i + 1;
-    }
+        z->digits[i++] = c;
 
-    if ( z->used > z->alloc )
-        puts(":)");
+    for ( ; i < z->alloc; ++i )
+        z->digits[i] = 0;
 
+    z->used = x->used + 1;
     res = uc_clamp(z);
 
     return res;
