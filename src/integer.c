@@ -16,7 +16,7 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_mul(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 
-int _uc_write_radix(char *s, int *n, uc_int *x, int radix);
+int _uc_write_radix_slow(char *s, int *n, uc_int *x, int radix);
 
 static int _check_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 
@@ -1916,7 +1916,7 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
  * The required string length n (which includes the null-byte) can be computed with
  * the helper function uc_write_radix_len(..).
  */
-int uc_write_radix_slow(char *s, int n, uc_int *x, int radix)
+int uc_write_radix(char *s, int n, uc_int *x, int radix)
 {
     int res;
     int sign, digit_ctr;
@@ -1992,19 +1992,30 @@ cleanup:
     return res;
 }
 
-int uc_write_radix(char *s, int n, uc_int *x, int radix)
+/*
+ * Converts x into a little-endian radix-r string representation. Negative numbers start
+ * with a '-' character and the string is null-terminated.
+ *
+ * The required string length n (which includes the null-byte) can be computed with
+ * the helper function uc_write_radix_len(..).
+ *
+ * Warning: While the algorithm's theoretical complexity is rather appealing, it runs significantly
+ * slower since it relies on MP-division instead of division by a digit. This was tested for integers
+ * with up to 16k bits.
+ */
+int uc_write_radix_slow(char *s, int n, uc_int *x, int radix)
 {
     int res;
     int s_len;
 
     s_len = 0;
 
-    res = _uc_write_radix(s, &s_len, x, radix);
+    res = _uc_write_radix_slow(s, &s_len, x, radix);
     s[s_len] = 0;
     return res;
 }
 
-int _uc_write_radix(char *s, int *n, uc_int *x, int radix)
+int _uc_write_radix_slow(char *s, int *n, uc_int *x, int radix)
 {
     int res;
     int i, k;
@@ -2092,8 +2103,8 @@ int _uc_write_radix(char *s, int *n, uc_int *x, int radix)
      * and then shift insert the 0's in the middle.
      */
 
-    _uc_write_radix(s, &q_str_len, &q, radix);
-    _uc_write_radix(s + q_str_len, &r_str_len, &r, radix);
+    _uc_write_radix_slow(s, &q_str_len, &q, radix);
+    _uc_write_radix_slow(s + q_str_len, &r_str_len, &r, radix);
 
     int shift = k - r_str_len ;
     rsh_string(s + q_str_len, r_str_len, shift, '0');
