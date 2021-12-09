@@ -1770,6 +1770,35 @@ cleanup:
     return res;
 }
 
+int uc_lcm(uc_int *z, uc_int *x, uc_int *y)
+{
+    int res;
+    uc_int tmp1, tmp2, tmp3;
+
+    if ( (res = uc_init_multi(&tmp1, &tmp2, &tmp3, 0, 0, 0)) != UC_OK )
+        return res;
+
+    if ((res = uc_gcd(&tmp1, x, y)) != UC_OK ||
+        (res = uc_mul(&tmp2, x, y)) != UC_OK ||
+         (res = uc_div(z, &tmp3, &tmp2, &tmp1)) != UC_OK )
+    {
+        goto cleanup;
+    }
+
+cleanup:
+    uc_free_multi(&tmp1, &tmp2, &tmp3, 0, 0, 0);
+
+    return res;
+}
+
+uc_word uc_lcm_w(uc_word x, uc_word y)
+{
+    int gcd;
+
+    gcd = uc_gcd_word(x, y);
+    return (x * y) / gcd;
+}
+
 /*
  * Calculate GCD for two positive integers (uc_word) with x >= y
  */

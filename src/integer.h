@@ -161,6 +161,9 @@ int uc_gcd(uc_int *z, uc_int *x, uc_int *y);
 uc_word uc_gcd_word(uc_word x, uc_word y);
 int uc_egcd(uc_int *g, uc_int *u, uc_int *v, uc_int *a, uc_int *b);
 
+int uc_lcm(uc_int *z, uc_int *x, uc_int *y);
+uc_word uc_lcm_w(uc_word x, uc_word y);
+
 
 int uc_int2rns(uc_int *xs, uc_int *x, uc_int *ms, int k);
 int uc_rns2int(uc_int *x, uc_int *xs, uc_int *ms, int k);
