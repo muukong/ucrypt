@@ -586,7 +586,7 @@ int _uc_mul_karatsuba(uc_int *C, uc_int *A, uc_int *B, int N)
 
     /* Compute Base^k */
     uc_set_i(&tmp1, 1);
-    uc_lshd(&tmp1, k);
+    uc_lshd(&tmp1, &tmp1, k);
 
     uc_div(&a1, &a0, A, &tmp1);
     uc_div(&b1, &b0, B, &tmp1);
@@ -610,11 +610,11 @@ int _uc_mul_karatsuba(uc_int *C, uc_int *A, uc_int *B, int N)
         uc_sub(&tmp1, &tmp1, &c2);
     else
         uc_add(&tmp1, &tmp1, &c2);
-    uc_lshd(&tmp1, k);
+    uc_lshd(&tmp1, &tmp1, k);
     uc_add(C, C, &tmp1);
 
     uc_copy(&tmp1, &c1);
-    uc_lshd(&tmp1, 2 * k);
+    uc_lshd(&tmp1, &tmp1, 2 * k);
     uc_add(C, C, &tmp1);
 
 
@@ -1064,7 +1064,7 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
      */
     /* ta = base^m * y */
     uc_copy(&ta, y);
-    uc_lshd(&ta, m);
+    uc_lshd(&ta, &ta, m);
 
     if ( uc_gte(x, &ta) )
     {
@@ -1091,7 +1091,7 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
          * x = x - q_estimate * (base ^ j) * y
          */
         uc_mul_d(&ta, y, q_estimate);   // ta = y * q_estimate
-        uc_lshd(&ta, j);                // ta = ta * (base ^ j)
+        uc_lshd(&ta, &ta, j);                // ta = ta * (base ^ j)
         uc_sub(&tb, x, &ta);
         uc_copy(x, &tb);
 
@@ -1100,7 +1100,7 @@ static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
         {
             q->digits[j]--;
             uc_copy(&tb, y);
-            uc_lshd(&tb, j);
+            uc_lshd(&tb, &tb, j);
             uc_add(&tc, x, &tb);
             uc_copy(x, &tc);
         }
@@ -1317,7 +1317,7 @@ int uc_lshb(uc_int *x, uc_int *y, int n)
      */
     if (n >= UC_DIGIT_BITS )
     {
-        uc_lshd(x, n / UC_DIGIT_BITS);
+        uc_lshd(x, x, n / UC_DIGIT_BITS);
         n %= UC_DIGIT_BITS;
     }
 
@@ -1399,40 +1399,48 @@ int uc_rshb(uc_int *x, uc_int *y, int n)
 }
 
 /*
- * Shift x left by y >= digits.
+ * Shift y left by n >= digits.
  *
- * For example, if y = 3:
+ * For example, if n = 3:
  * [x_0 x_1 x_2 x_3 ... x_{n-1}] --> [0 0 0 x_0 x_1 x_2 x_3 ... x_{n-1}]
- * (Note: The array above depicts the actual internal representation in x->digits)
+ * (Note: The array above depicts the actual internal representation in y->digits)
  */
-int uc_lshd(uc_int *x, int y)
+int uc_lshd(uc_int *x, uc_int *y, int n)
 {
-    assert(y >= 0);
+    int res;
 
-    /* Nothing to do */
-    if ( y == 0 )
-        return UC_OK;
+    res = UC_OK;
+
+    /* Negative shifts are not allowed */
+    if (n < 0 )
+        return UC_INPUT_ERR;
+
+    /* No shifting necessary */
+    if (n == 0 )
+        return uc_copy(x, y);
 
     /*
-     * Nothing to do if x is zero.
+     * Nothing to do if y is zero.
      *
      * Warning: Do not remove this check unless you clamp the number at the very end (otherwise
      * you end up with a non-normalized zero).
      */
-    if ( uc_is_zero(x) )
-        return UC_OK;
+    if ( uc_is_zero(y) )
+        return uc_set_zero(x);
 
-    uc_grow(x, x->used + y);
+    /* Make sure x can hold result */
+    if ((res = uc_grow(x, y->used + n)) != UC_OK )
+        return res;
 
-    /* Iterate backwards (i.e. from x_{n-1} to x_0) and copy x_i to x_{i+y} */
-    for ( int i = x->used - 1; i >= 0; --i )
-        x->digits[i + y] = x->digits[i];
+    /* Iterate backwards (i.e. from x_{n-1} to x_0) and copy x_i to x_{i+n} */
+    for (int i = y->used - 1; i >= 0; --i )
+        x->digits[i + n] = y->digits[i];
 
-    /* Zero out the first y digits */
-    for ( int i = 0; i < y; ++i )
+    /* Zero out the first n digits */
+    for (int i = 0; i < n; ++i )
         x->digits[i] = 0;
 
-    x->used += y;
+    x->used = y->used + n;
 }
 
 /*
