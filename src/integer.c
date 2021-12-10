@@ -1747,40 +1747,44 @@ cleanup:
     return res;
 }
 
-int uc_gcd(uc_int *z, uc_int *u, uc_int *v)
+int uc_gcd(uc_int *z, uc_int *x, uc_int *y)
 {
     int res;
-    uc_int vt, tmp, tmp2;
+    uc_int yt, tmp;
 
-    if ( !uc_is_pos(u) || !uc_is_pos(v) )
+    if ( !uc_is_pos(x) || !uc_is_pos(y) )
         return UC_INPUT_ERR;
 
     res = UC_OK;
 
-    if ( (res = uc_init_multi(&vt, &tmp, &tmp2, 0, 0, 0)) != UC_OK )
+    if ( (res = uc_init_multi(&yt, &tmp, 0, 0, 0, 0)) != UC_OK )
         return res;
 
-    if  ( (res = uc_copy(z, u)) != UC_OK ||
-          (res = uc_copy(&vt, v)) != UC_OK )
+    /*
+     * Make local copy of y and then copy x to z.
+     *
+     * Note: We need not create a copy of x since we do not access it after this.
+     * Warning: Changing the order of these two operations leads to input aliasing.
+     */
+    if ( (res = uc_copy(&yt, y)) != UC_OK ||
+         (res = uc_copy(z, x)) != UC_OK )
     {
-        goto leave;
+        goto cleanup;
     }
 
-    while ( !uc_is_zero(&vt) )
+    while ( !uc_is_zero(&yt) )
     {
         if ( (res = uc_copy(&tmp, z)) != UC_OK ||
-             (res = uc_copy(z, &vt)) != UC_OK ||
-             (res = uc_mod(&tmp2, &tmp, &vt)) != UC_OK ||
-             (res = uc_copy(&vt, &tmp2)) != UC_OK  )
+             (res = uc_copy(z, &yt)) != UC_OK ||
+             (res = uc_mod(&yt, &tmp, &yt)) != UC_OK )
         {
-            goto leave;
+            goto cleanup;
         }
     }
 
-leave:
-    uc_free(&vt);
+cleanup:
+    uc_free(&yt);
     uc_free(&tmp);
-    uc_free(&tmp2);
 
     return res;
 }
