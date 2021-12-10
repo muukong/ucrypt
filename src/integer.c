@@ -1452,6 +1452,8 @@ int uc_lshd(uc_int *x, uc_int *y, int n)
         x->digits[i] = 0;
 
     x->used = y->used + n;
+
+    return res;
 }
 
 /*
