@@ -1636,6 +1636,88 @@ cleanup:
 }
 
 /*
+ * Compute z = x ^ y (mod m) for 0 <= x, y < m
+ *
+ * // TODO: Add input validation
+ */
+int uc_exp_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
+{
+    uc_int xt, yt, tmp;
+    int i, n, res;
+
+    res = UC_OK;
+
+    if ( uc_is_neg(y) )
+        return UC_INPUT_ERR;
+
+    /*
+     * If y is zero, simply set z to 1.
+     *
+     * Note: We use the convention that 0^0 = 1.
+     */
+    if ( uc_is_zero(y) )
+        return uc_set_i(z, 1);
+
+    if ( (res = uc_init_multi(&xt, &yt, &tmp, 0, 0, 0)) != UC_OK )
+        return res;
+
+    /* Make copies of x and y to avoid aliasing */
+    if ( (res = uc_copy(&xt, x)) != UC_OK ||
+         (res = uc_copy(&yt, y)) != UC_OK )
+    {
+        goto cleanup;
+    }
+
+    if ( (res = uc_init(&tmp)) != UC_OK ||
+         (res = uc_set_i(z, 1)) != UC_OK )
+    {
+        goto cleanup;
+    }
+
+    /*
+     * Square and multiply. (Note: we ignore the sign during this loop and
+     * fix it later).
+     */
+    n = uc_count_bits(&yt);
+    for ( i = n - 1; i >= 0; --i )
+    {
+        /* z = z * z */
+        if ( (res = uc_mul_mod(&tmp, z, z, m)) != UC_OK ||
+             (res = uc_copy(z, &tmp)) != UC_OK )
+        {
+            goto cleanup;
+        }
+
+        /*
+         * z = z * x ^ (y_i) where y_i is i-th exponent bit.
+         *
+         * To avoid time-based side channel information leakage, we carry out the
+         * multiplication and result copy operation regardless of the exponent
+         * bit y_i.
+         */
+
+        if ( (res = uc_mul_mod(&tmp, z, &xt, m)) != UC_OK )
+            goto cleanup;
+
+        if ( uc_nth_bit(&yt,i) == 1 )
+            uc_copy(z, &tmp);
+        else
+            uc_copy(z, z);
+    }
+
+    /* Fix sign */
+    if ( uc_is_neg(&xt) && uc_is_odd(&yt) )
+        z->sign = UC_NEG;
+    else
+        z->sign = UC_POS;
+
+    cleanup:
+    uc_free_multi(&xt, &yt, &tmp, 0, 0, 0);
+
+    return res;
+}
+
+/*
  * Compute inverse x of y modulo m, i.e., s.t. x * y = 1 (mod m)
  *
  * Note: In Modern Computer Arithmetic, different variables names are used:
