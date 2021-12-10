@@ -1729,19 +1729,17 @@ int uc_mod(uc_int *x, uc_int *y, uc_int *m)
 
     /* Check that y >= 0 and m > 0 */
     if ( uc_is_neg(y) || !uc_is_pos(m) )
-    {
         return UC_INPUT_ERR;
-    }
 
     /* No reductions needed if y < m */
     if ( uc_lt(y, m) )
         return uc_copy(x, y);
 
-    if ((res = uc_init(&qt)) != UC_OK ||
-        (res = uc_div(&qt, x, y, m)) != UC_OK )
-    {
+    if ( (res = uc_init(&qt)) != UC_OK )
+        return res;
+
+    if ( (res = uc_div(&qt, x, y, m)) != UC_OK )
         goto cleanup;
-    }
 
 cleanup:
     uc_free(&qt);
