@@ -1805,8 +1805,9 @@ int uc_egcd(uc_int *g, uc_int *u, uc_int *v, uc_int *a, uc_int *b)
     if ( (res = uc_init_multi(&w, &x, &q, &r, &bt, &tmp)) != UC_OK )
         return res;
 
-    if ( (res = uc_copy(g, a) != UC_OK) ||
-         (res = uc_copy(&bt, b)) != UC_OK )
+    /* Warning: Changing the order of these two operations leads to input aliasing */
+    if ( (res = uc_copy(&bt, b)) != UC_OK ||
+         (res = uc_copy(g, a) != UC_OK) )
     {
         goto cleanup;
     }
