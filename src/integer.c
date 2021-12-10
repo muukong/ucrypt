@@ -1350,7 +1350,13 @@ int uc_lshb(uc_int *x, uc_int *y, int n)
  */
 int uc_rshb(uc_int *x, uc_int *y, int n)
 {
-    assert( n >= 0 );
+    int res;
+
+    res = UC_OK;
+
+    /* Negative shifts are not allowed */
+    if ( n < 0 )
+        return UC_INPUT_ERR;
 
     if ( n == 0 )
         return uc_copy(x, y);
@@ -1365,7 +1371,8 @@ int uc_rshb(uc_int *x, uc_int *y, int n)
         return uc_copy(x, y);
 
     /* Initialize x */
-    uc_copy(x, y);
+    if ( (res = uc_copy(x, y)) != UC_OK )
+        goto cleanup;
 
     /*
      *  Note: After copying y to x, we know that x can hold the final result since
@@ -1378,7 +1385,8 @@ int uc_rshb(uc_int *x, uc_int *y, int n)
      */
     if (n >= UC_DIGIT_BITS )
     {
-        uc_rshd(x, x, n / UC_DIGIT_BITS);
+        if ( (res = uc_rshd(x, x, n / UC_DIGIT_BITS)) != UC_OK )
+            goto cleanup;
         n %= UC_DIGIT_BITS;
     }
 
@@ -1395,7 +1403,10 @@ int uc_rshb(uc_int *x, uc_int *y, int n)
         r = rr;
     }
 
-    uc_clamp(x);
+    res = uc_clamp(x);
+
+cleanup:
+    return res;
 }
 
 /*
