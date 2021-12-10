@@ -769,10 +769,27 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
 int uc_mul(uc_int *z, uc_int *x, uc_int *y)
 {
     int res;
+    uc_int xt, yt;
 
-    res = _uc_mul(z, x, y);
+    res = UC_OK;
+
+    if ( (res = uc_init_multi(&xt, &yt, 0, 0, 0, 0)) != UC_OK )
+        return res;
+
+    if ( (res = uc_copy(&xt, x)) != UC_OK ||
+         (res = uc_copy(&yt, y)) != UC_OK )
+    {
+        goto cleanup;
+    }
+
+    if ( (res = _uc_mul(z, &xt, &yt)) != UC_OK )
+        goto cleanup;
     if ( x->sign != y->sign )
         z->sign = UC_NEG;
+
+cleanup:
+    uc_free(&xt);
+    uc_free(&yt);
 
     return res;
 }
