@@ -368,10 +368,15 @@ int uc_copy(uc_int *x, uc_int *y)
 
 /*
  * Release memory allocated for UC integer x. For security reasons, we zero out
- * the memory.
+ * the memory. This function can be invoked on all UC integers that have been
+ * initialized with some init function.
  */
 int uc_free(uc_int *x)
 {
+    /* Allow freeing after initializing an integer */
+    if ( x->digits == NULL )
+        return UC_OK;
+
     uc_set_zero(x);
     XFREE(x->digits);
     x->digits = NULL;
