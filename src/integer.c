@@ -1506,14 +1506,21 @@ int uc_rshd(uc_int *z, uc_int *x, int y)
  */
 int uc_abs(uc_int *x, uc_int *y)
 {
-    int status = uc_copy(x, y);
+    int res;
+
+    res = UC_OK;
+
+    if ( (res = uc_copy(x, y)) != UC_OK )
+        return res;
     x->sign = UC_POS;
-    return status;
+
+    return res;
 }
 
 int uc_flip_sign(uc_int *x)
 {
-    if ( uc_is_zero(x) ) // do nothing for zero (it's sign is always positive)
+    /* Do nothing if x is zero ("-0" is not allowed) */
+    if ( uc_is_zero(x) )
         return UC_OK;
 
     if ( x->sign == UC_POS )
@@ -1532,11 +1539,6 @@ int uc_count_bits(uc_int *x)
 {
     assert( x->digits != NULL );
 
-    /*
-     * TODO:
-     *
-     * Open question: How many bits are required for zero?
-     */
     if (uc_is_zero(x) )
         return 1;
 
@@ -1559,7 +1561,7 @@ int uc_count_bits(uc_int *x)
 }
 
 /*
- * Modular artithmetic
+ * Modular arithmetic
  */
 
 /*
@@ -1567,9 +1569,10 @@ int uc_count_bits(uc_int *x)
  */
 int uc_add_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
 {
-    uc_int tmp;
+    int res;
+    uc_int mt;
 
-    uc_init(&tmp);
+    res = UC_OK;
 
     /* check that 0 <= x < m */
     if (uc_is_neg(x) || !uc_lt(x, m) )
@@ -1581,16 +1584,28 @@ int uc_add_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
 
     /* At this point we implicitly know that m > 0 */
 
-    uc_add(z, x, y);
-    if ( uc_gte(z, m) )
+    /* Make temporary copy of m */
+    if ( (res = uc_init(&mt)) != UC_OK ||
+         (res = uc_copy(&mt, m)) != UC_OK )
     {
-        uc_sub(&tmp, z, m);
-        uc_copy(z, &tmp);
+        return res;
     }
 
-    uc_free(&tmp);
+    /*
+     * Compute z = x + y and then subtract m if z > m. Afterwards, z < m since x, y < m.
+     */
+    if ( (res = uc_add(z, x, y)) != UC_OK )
+        goto cleanup;
+    if ( uc_gte(z, &mt) )
+    {
+        if ( (res = uc_sub(z, z, &mt)) != UC_OK )
+            goto cleanup;
+    }
 
-    return UC_OK;
+cleanup:
+    uc_free(&mt);
+
+    return res;
 }
 
 /*
