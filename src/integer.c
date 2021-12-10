@@ -1378,7 +1378,7 @@ int uc_rshb(uc_int *x, uc_int *y, int n)
      */
     if (n >= UC_DIGIT_BITS )
     {
-        uc_rshd(x, n / UC_DIGIT_BITS);
+        uc_rshd(x, x, n / UC_DIGIT_BITS);
         n %= UC_DIGIT_BITS;
     }
 
@@ -1450,13 +1450,23 @@ int uc_lshd(uc_int *x, uc_int *y, int n)
  * [x_0 x_1 x_2 x-3 ... x_n] --> [x_3 x_4 ... x_n 0 0 0]
  * (Note: The array above depicts the actual internal representation in x->digits)
  */
-int uc_rshd(uc_int *x, int y)
+int uc_rshd(uc_int *z, uc_int *x, int y)
 {
-    assert(y >= 0);
+    int i, res;
 
-    /* Nothing to do */
+    res = UC_OK;
+
+    /* Negative shifts are not allowed */
+    if ( y < 0 )
+        return UC_INPUT_ERR;
+
+    /* No shifting required */
     if ( y == 0 )
-        return UC_OK;
+        return uc_copy(z, x);
+
+    /* Warning: removing this check can lead to an array underflow later */
+    if ( y >= x->used )
+        return uc_set_zero(z);
 
     /*
      * Nothing to do if x is zero.
@@ -1465,17 +1475,19 @@ int uc_rshd(uc_int *x, int y)
      * you end up with a non-normalized zero).
      */
     if ( uc_is_zero(x) )
-        return UC_OK;
+        return uc_set_zero(z);
 
-    int i;
+    if ( (res = uc_grow(z, x->used - y)) != UC_OK )
+        return res;
 
     for ( i = 0; i < x->used - y; ++i )
-        x->digits[i] = x->digits[i+y];
+        z->digits[i] = x->digits[i+y];
 
-    for ( ; i < x->used; ++i )
-        x->digits[i] = 0;
+    z->used = x->used - y;
+    for ( ; i < z->used; ++i )
+        z->digits[i] = 0;
 
-    x->used -= y;
+    return res;
 }
 
 /*

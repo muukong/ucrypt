@@ -129,7 +129,7 @@ int uc_exp_i(uc_int *z, uc_int *x, int y);
 int uc_lshb(uc_int *x, uc_int *y, int n);
 int uc_rshb(uc_int *x, uc_int *y, int n);
 int uc_lshd(uc_int *x, uc_int *y, int n);
-int uc_rshd(uc_int *x, int y);
+int uc_rshd(uc_int *z, uc_int *x, int y);
 
 int uc_abs(uc_int *x, uc_int *y);
 
