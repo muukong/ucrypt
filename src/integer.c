@@ -1644,33 +1644,41 @@ cleanup:
 int uc_mod_inv(uc_int *x, uc_int *y, uc_int *m)
 {
     int res;
-    uc_int c, w, q, r, yt, tmp;
+    uc_int c, w, q, r, yt, tmp, mt;
 
     res = UC_OK;
 
-    if ((res = uc_init_multi(&c, &tmp, &w, &q, &r, &yt)) != UC_OK )
+    if ( (res = uc_init_multi(&c, &tmp, &w, &q, &r, &yt)) != UC_OK ||
+         (res = uc_init(&mt)) != UC_OK )
+    {
         return res;
+    }
 
-    if ((res = uc_copy(&yt, y)) != UC_OK )
+    /* Make local copy of y */
+    if ( (res = uc_copy(&yt, y)) != UC_OK )
         goto cleanup;
 
-    if ((res = uc_set_i(x, 1)) != UC_OK ||
-        (res = uc_set_zero(&w)) != UC_OK ||
-        (res = uc_copy(&c, m)) != UC_OK )
+    /* Make local copy of mt */
+    if ( (res = uc_copy(&mt, m)) != UC_OK )
+        goto cleanup;
+
+    if ( (res = uc_set_i(x, 1)) != UC_OK ||
+         (res = uc_set_zero(&w)) != UC_OK ||
+         (res = uc_copy(&c, &mt)) != UC_OK )
     {
         goto cleanup;
     }
 
     while ( !uc_is_zero(&c) )
     {
-        if ((res = uc_div(&q, &r, &yt, &c)) != UC_OK )
+        if ( (res = uc_div(&q, &r, &yt, &c)) != UC_OK )
             goto cleanup;
 
         /*
          * (y, c) := (c, r)
          */
 
-        if ((res = uc_copy(&yt, &c)) != UC_OK ||
+        if ( (res = uc_copy(&yt, &c)) != UC_OK ||
              (res = uc_copy(&c, &r)) != UC_OK )
         {
             goto cleanup;
@@ -1684,24 +1692,26 @@ int uc_mod_inv(uc_int *x, uc_int *y, uc_int *m)
         if ( (res = uc_copy(&r, &w)) != UC_OK)
             goto cleanup;
 
-        if ((res = uc_mul_mod(&tmp, &q, &w, m)) != UC_OK ||
+        if ( (res = uc_mul_mod(&tmp, &q, &w, &mt)) != UC_OK ||
              (res = uc_sub(&w, x, &tmp)) != UC_OK )
         {
             goto cleanup;
         }
 
         /* If w < 0, add m to make it non-negative again */
-        if (uc_is_neg(&w) )
+        if ( uc_is_neg(&w) )
         {
-            uc_add(&tmp, &w, m);
+            uc_add(&tmp, &w, &mt);
             uc_copy(&w, &tmp);
         }
         assert( !uc_is_neg(&w) );
 
-        uc_copy(x, &r);
+        if ( (res = uc_copy(x, &r)) != UC_OK )
+            goto cleanup;
     }
 
 cleanup:
+    uc_free(&mt);
     uc_free_multi(&c, &tmp, &w, &q, &r, &yt);
 
     return res;
