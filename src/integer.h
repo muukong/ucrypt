@@ -105,6 +105,8 @@ int uc_cmp_mag(uc_int *x, uc_int *y);
 #define uc_is_odd(x) ((x)->digits[0] & 1)
 #define uc_is_even(x) (!uc_is_odd(x))
 
+#define uc_div_ceil(x, y) ((x) / (y) + ((x) % (y) > 0))
+
 /*
  * Integer arithmetic
  */
