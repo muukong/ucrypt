@@ -107,6 +107,11 @@ int uc_rand_int(uc_int *x, uc_int *b)
 
     uc_init_multi(&b_, &base_power, 0, 0, 0, 0);
 
+    /* Make sure x can hold result */
+    // TODO: can probably be deleted
+    //if ( (res = uc_grow(x, b->used)) != UC_OK )
+    //    goto cleanup;
+
     /*
      * We can easily generate numbers in the range [0,base^k) for any integer k >= 0. We therefore
      * find the smallest base power (i.e., base^k) s.t. b < base^k.
