@@ -1,6 +1,8 @@
 #ifndef UCRYPT_INTEGER_H
 #define UCRYPT_INTEGER_H
 
+#include <stdint.h>
+
 /*
  * Each limb of a number has room for UC_DIGIT_BITS bits. The following must hold true:
  * - A uc_digit can hold UC_DIGIT_BITS + 1 bits
@@ -156,6 +158,7 @@ int uc_exp_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
 int uc_mod_inv(uc_int *x, uc_int *y, uc_int *m);
 
 int uc_mod(uc_int *x, uc_int *y, uc_int *m);
+int uc_mod_base_pow(uc_int *x, uc_int *y, int k);
 
 /*
  * Arithmetic algorithms

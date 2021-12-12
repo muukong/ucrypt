@@ -560,7 +560,7 @@ int uc_mul_karatsuba(uc_int *z, uc_int *x, uc_int *y)
     if ( x->used != y->used )
         return UC_INPUT_ERR;
 
-    return _uc_mul_karatsuba(z, x, y, 400);
+    return _uc_mul_karatsuba(z, x, y, 50);
 }
 
 int _uc_mul_karatsuba(uc_int *C, uc_int *A, uc_int *B, int N)
@@ -577,7 +577,9 @@ int _uc_mul_karatsuba(uc_int *C, uc_int *A, uc_int *B, int N)
 
     /* Base case */
     if ( n < N )
+    {
         return uc_mul(C, A, B);
+    }
 
     uc_init_multi(&tmp1, &tmp2, &a0, &a1, &b0, &b1);
     uc_init_multi(&c0, &c1, &c2, 0, 0, 0);
@@ -585,11 +587,18 @@ int _uc_mul_karatsuba(uc_int *C, uc_int *A, uc_int *B, int N)
     k = n / 2;
 
     /* Compute Base^k */
-    uc_set_i(&tmp1, 1);
-    uc_lshd(&tmp1, &tmp1, k);
+    //uc_set_i(&tmp1, 1);
+    //uc_lshd(&tmp1, &tmp1, k);
 
-    uc_div(&a1, &a0, A, &tmp1);
-    uc_div(&b1, &b0, B, &tmp1);
+    /*
+     * Split a and b as follows:
+     * a = a1 * base^k + a0
+     * b = b1 * base^k + b0
+     */
+    uc_mod_base_pow(&a0, A, k);
+    uc_rshd(&a1, A, k);
+    uc_mod_base_pow(&b0, B, k);
+    uc_rshd(&b1, B, k);
 
     uc_sub(&tmp1, &a0, &a1);
     uc_sub(&tmp2, &b0, &b1);
@@ -1830,6 +1839,34 @@ cleanup:
 
     return res;
 }
+
+/*
+ * Compute x = y (mod base^k) for y >= 0
+ */
+int uc_mod_base_pow(uc_int *x, uc_int *y, int k)
+{
+    int i, res;
+
+    if ( uc_is_neg(y) )
+        return UC_INPUT_ERR;
+
+    if ( (res = uc_grow(x, k)) != UC_OK )
+        goto cleanup;
+
+    for ( i = 0; i < k; ++i )
+        x->digits[i] = y->digits[i];
+
+    for ( ; i < x->used; ++i )
+        x->digits[i] = 0;
+
+    x->sign = UC_POS;
+    x->used = k;
+    uc_clamp(x);
+
+cleanup:
+    return res;
+}
+
 
 int uc_gcd(uc_int *z, uc_int *x, uc_int *y)
 {
