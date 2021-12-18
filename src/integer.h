@@ -9,15 +9,15 @@
  * - A uc_word can hold 2 * UC_DIGIT_BITS + 1 bits
  */
 
+/*
 typedef unsigned char uc_digit;
 typedef unsigned short uc_word;
 #define UC_DIGIT_BITS   7u
+ */
 
-/*
 typedef unsigned int    uc_digit;
 typedef unsigned long   uc_word;
 #define UC_DIGIT_BITS      31u
- */
 
 /*
  * Multi-precision integer data strcture.
