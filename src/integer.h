@@ -119,6 +119,7 @@ int uc_add_d(uc_int *z, uc_int *x, uc_digit d);
 int uc_sub(uc_int *z, uc_int *x, uc_int *y);
 int uc_sub_d(uc_int *z, uc_int *x, uc_digit y);
 int uc_mul(uc_int *z, uc_int *x, uc_int *y);
+int uc_mul_digs(uc_int *z, uc_int *x, uc_int *y, int digits);
 int uc_mul_karatsuba(uc_int *z, uc_int *x, uc_int *y);
 int uc_mul_2(uc_int *x, uc_int *y);
 int uc_mul_d(uc_int *z, uc_int *x, uc_digit y);

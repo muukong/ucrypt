@@ -14,6 +14,7 @@
 static int _uc_add(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_sub(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_mul(uc_int *z, uc_int *x, uc_int *y);
+static int _uc_mul_digs(uc_int *z, uc_int *x, uc_int *y, int digits);
 static int _uc_mul_karatsuba(uc_int *C, uc_int *A, uc_int *B, int N);
 static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 
@@ -777,6 +778,14 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
  */
 int uc_mul(uc_int *z, uc_int *x, uc_int *y)
 {
+    return uc_mul_digs(z, x, y, x->used * y->used);
+}
+
+/*
+ * Compute z = x * y (mod BASE^digits)
+ */
+int uc_mul_digs(uc_int *z, uc_int *x, uc_int *y, int digits)
+{
     int res;
     uc_int xt, yt;
 
@@ -791,12 +800,12 @@ int uc_mul(uc_int *z, uc_int *x, uc_int *y)
         goto cleanup;
     }
 
-    if ( (res = _uc_mul(z, &xt, &yt)) != UC_OK )
+    if ( (res = _uc_mul_digs(z, &xt, &yt, digits)) != UC_OK )
         goto cleanup;
     if ( x->sign != y->sign )
         z->sign = UC_NEG;
 
-cleanup:
+    cleanup:
     uc_free(&xt);
     uc_free(&yt);
 
@@ -804,24 +813,33 @@ cleanup:
 }
 
 /*
- * Compute z = |x| * |y|
+ * Compute z = |x| * |y| (mod BASE^digits)
+ *
+ * Warning: z must not be aliased with x or y
  */
-static int _uc_mul(uc_int *z, uc_int *x, uc_int *y)
+static int _uc_mul_digs(uc_int *z, uc_int *x, uc_int *y, int digits)
 {
-    int n = x->used;
-    int m = y->used;
+    int i, j, j_max, c;
+    int res;
 
-    /* Allocate enough space, zero out memory, and set minimum number of digits */
-    uc_set_zero(z);
-    uc_grow(z, n + m + 2);
-    z->used = n + m + 2;  // Let's be generous - we can clamp at the end
-
-    for ( int i = 0; i < m; ++i )
+    /* Make sure z can hold result and set z = 0 */
+    if ( (res = uc_grow(z, digits)) != UC_OK ||
+         (res = uc_set_zero(z)) != UC_OK )
     {
-        uc_word c  = 0;     // carry
-        for ( int j = 0; j < n; ++j )
+        return res;
+    }
+
+    for ( i = 0; i < x->used; ++i )
+    {
+        j_max = UC_MIN(y->used, digits - i);
+
+        if ( j_max < 1 ) /* We are done; all remaining products would be larger than base^digits */
+            break;
+
+        c = 0; /* carry */
+        for ( j = 0; j < j_max; ++j )
         {
-            // tmp = r_ij + x_j * y_i + c
+            /* tmp = r_ij + x_j * y_i + c */
             uc_word tmp = ((uc_word) z->digits[i + j]) +
                           ((uc_word) x->digits[j]) *
                           ((uc_word) y->digits[i]) +
@@ -831,12 +849,14 @@ static int _uc_mul(uc_int *z, uc_int *x, uc_int *y)
             c = tmp >> UC_DIGIT_BITS;
         }
 
-        z->digits[i + n] = c;
+        if ( i + j < digits )
+            z->digits[i+j] = c;
     }
 
+    z->used = digits;
     uc_clamp(z);
 
-    return UC_OK;
+    return res;
 }
 
 /*
