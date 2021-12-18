@@ -7,17 +7,30 @@
  * Each limb of a number has room for UC_DIGIT_BITS bits. The following must hold true:
  * - A uc_digit can hold UC_DIGIT_BITS + 1 bits
  * - A uc_word can hold 2 * UC_DIGIT_BITS + 1 bits
+ *
+ */
+
+/*
+ * The comba multiplication can be used if the number of digits in both factors does not exceed
+ * UC_COMBA_MUL_MAX_DIGS. This value is calculated as the largest k that satisfies
+ *      k < (2^alpha) / (beta^2 + 2*beta - 1)
+ * where
+ *  alpha number of bits in a word
+ *  beta is the digit base
  */
 
 /*
 typedef unsigned char uc_digit;
 typedef unsigned short uc_word;
 #define UC_DIGIT_BITS   7u
+#define UC_COMBA_MUL_MAX_DIGS 4
  */
 
 typedef unsigned int    uc_digit;
 typedef unsigned long   uc_word;
-#define UC_DIGIT_BITS      31u
+#define UC_DIGIT_BITS      28u  /* Note: We use 28 (instead of the more intuitive 31) since this allows us to use
+                                         Comba multiplication for reasonably sized inputs */
+#define UC_COMBA_MUL_MAX_DIGS 256
 
 /*
  * Multi-precision integer data strcture.
