@@ -1773,7 +1773,7 @@ int uc_count_bits(uc_int *x)
      */
     for (int i = UC_DIGIT_BITS - 1; i >= 0; --i )
     {
-        if ( x->digits[x->used-1] & (1u << i) )
+        if ( x->digits[x->used-1] & ((uc_digit)1 << i) )
         {
             nbits += (i + 1);
             break;
