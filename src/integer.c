@@ -1016,10 +1016,19 @@ int uc_exch (uc_int * a, uc_int * b)
     return UC_OK;
 }
 
+int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
+{
+#ifdef UC_SCHOOL_SMALL_DIV
+    return uc_div_school_small(q, r, x, y);
+#else
+    return uc_div_school_fast(q, r, x, y);
+#endif
+}
+
 /*
  * Compute r and q s.t. x = q * y + r for non-negative integers x and y.
  */
-int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
+int uc_div_school_small(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 {
     int k;
     uc_int xt, yt, tmp;
