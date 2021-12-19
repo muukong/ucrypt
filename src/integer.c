@@ -2500,7 +2500,7 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
  * The required string length n (which includes the null-byte) can be computed with
  * the helper function uc_write_radix_len(..).
  */
-int uc_write_radix(char *s, int n, uc_int *x, int radix)
+int uc_write_radix(char *s, uc_int *x, int radix)
 {
     int res;
     int sign, digit_ctr;
@@ -2695,7 +2695,7 @@ void uc_debug_print_int_radix(uc_int *x, int radix)
 
     len = uc_write_radix_len(x, radix);
     s = malloc(len * sizeof(char));
-    uc_write_radix(s, len, x, radix);
+    uc_write_radix(s, x, radix);
     printf("%s\n", s);
     free(s);
 }

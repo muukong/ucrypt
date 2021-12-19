@@ -26,14 +26,14 @@
 #ifdef UC_DIGIT_8BIT
     typedef unsigned char uc_digit;
     typedef unsigned short uc_word;
-    #define UC_DIGIT_BITS   7u
+    #define UC_DIGIT_BITS   7
     #define UC_COMBA_MUL_MAX_DIGS 4
 #endif
 
 #ifdef UC_DIGIT_32BIT
     typedef unsigned int    uc_digit;
     typedef unsigned long   uc_word;
-    #define UC_DIGIT_BITS      28u
+    #define UC_DIGIT_BITS      28
     #define UC_COMBA_MUL_MAX_DIGS 255
 #endif
 
@@ -208,7 +208,7 @@ int uc_rns2int(uc_int *x, uc_int *xs, uc_int *ms, int k);
 
 /* Read and write to and from string */
 int uc_read_radix(uc_int *x, const char *y, int radix);
-int uc_write_radix(char *s, int n, uc_int *x, int radix);
+int uc_write_radix(char *s, uc_int *x, int radix);
 int uc_write_radix_len(uc_int *x, int radix);
 
 /* Read raw bytes */
