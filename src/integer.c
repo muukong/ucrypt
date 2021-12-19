@@ -13,14 +13,9 @@
 
 static int _uc_add(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_sub(uc_int *z, uc_int *x, uc_int *y);
-static int _uc_mul(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_mul_digs(uc_int *z, uc_int *x, uc_int *y, int digits);
 static int _uc_mul_karatsuba(uc_int *C, uc_int *A, uc_int *B, int N);
 static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
-
-int _uc_write_radix_slow(char *s, int *n, uc_int *x, int radix);
-
-static int _check_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 
 static uc_word _uc_gcd_word(uc_word x, uc_word y);
 
@@ -256,7 +251,7 @@ int uc_set_zero(uc_int *x)
  */
 int uc_set_i(uc_int *x, int n)
 {
-    uc_set_l(x, n);
+    return uc_set_l(x, n);
 }
 
 /*
@@ -299,7 +294,7 @@ int uc_set_l(uc_int *x, long n)
 
 int uc_set_d(uc_int *x, uc_digit n)
 {
-    uc_set_w(x, n);
+    return uc_set_w(x, n);
 }
 
 int uc_set_w(uc_int *x, uc_word n)
@@ -384,6 +379,8 @@ int uc_free_multi(uc_int *x0, uc_int *x1, uc_int *x2, uc_int *x3, uc_int *x4, uc
     if ( x3 ) uc_free(x3);
     if ( x4 ) uc_free(x4);
     if ( x5 ) uc_free(x5);
+
+    return UC_OK;
 }
 
 /*
@@ -1017,26 +1014,6 @@ int uc_exch (uc_int * a, uc_int * b)
     *a = *b;
     *b = t;
     return UC_OK;
-}
-
-static int _check_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
-{
-    uc_int t1, t2;
-
-    uc_init(&t1);
-    uc_init(&t2);
-
-    uc_mul(&t1, q, y);
-    uc_add(&t2, &t1, r);
-
-    if ( !uc_eq_mag(x, &t2) )
-    {
-        puts("[!] _check_div FAILED. Exiting know...");
-        exit(1);
-    }
-
-    uc_free(&t1);
-    uc_free(&t2);
 }
 
 /*
@@ -2686,9 +2663,9 @@ void uc_debug_print_int(uc_int *x)
     for ( i = 0; i < x->alloc; ++i )
     {
         if ( i < x->used )
-            printf("0x%02x, ", x->digits[i]);
+            printf("0x%02lx, ", x->digits[i]);
         else
-            printf("_%02x ", x->digits[i]);
+            printf("_%02lx ", x->digits[i]);
     }
     printf("]\n");
 }
@@ -2700,9 +2677,9 @@ void uc_debug_print_int_bytes(uc_int *x)
     for ( i = 0; i < x->alloc; ++i )
     {
         if ( i < x->used )
-            printf("0x%02x, ", x->digits[i]);
+            printf("0x%02lx, ", x->digits[i]);
         else
-            printf("_%02x ", x->digits[i]);
+            printf("_%02lx ", x->digits[i]);
     }
     printf("]");
     printf("\n");
