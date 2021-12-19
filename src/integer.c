@@ -1103,6 +1103,18 @@ int uc_div_school_fast(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 
     res = UC_OK;
 
+    /* Division by 0? No can do... */
+    if ( uc_is_zero(y) )
+        return UC_INPUT_ERR;
+
+    /* If x = y, q = 1 and r = 0 */
+    if ( uc_eq(x, y) )
+    {
+        if ( (res = uc_set_i(q, 1)) != UC_OK )
+            return res;
+        return uc_set_zero(r);
+    }
+
     /* If x < y, set q = 0 and r = x */
     if ( uc_lt(x, y) )
     {
