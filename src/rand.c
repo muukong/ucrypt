@@ -80,7 +80,7 @@ int uc_rand_int_base_pow(uc_int *x, int k)
     }
 
     /* Zero out remaining digits of x */
-    for ( i = 0; i < x->used; ++i )
+    for ( i = k; i < x->used; ++i )
         x->digits[i] = 0;
 
     x->used = k;
