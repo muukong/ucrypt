@@ -209,7 +209,6 @@ int uc_rns2int(uc_int *x, uc_int *xs, uc_int *ms, int k);
 /* Read and write to and from string */
 int uc_read_radix(uc_int *x, const char *y, int radix);
 int uc_write_radix(char *s, int n, uc_int *x, int radix);
-/*int uc_write_radix_slow(char *s, int n, uc_int *x, int radix);*/
 int uc_write_radix_len(uc_int *x, int radix);
 
 /* Read raw bytes */
