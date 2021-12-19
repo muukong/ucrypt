@@ -1502,7 +1502,7 @@ cleanup:
  */
 int uc_lshd(uc_int *x, uc_int *y, int n)
 {
-    int res;
+    int i, res, oldused;
 
     res = UC_OK;
 
@@ -1528,14 +1528,19 @@ int uc_lshd(uc_int *x, uc_int *y, int n)
         return res;
 
     /* Iterate backwards (i.e. from x_{n-1} to x_0) and copy x_i to x_{i+n} */
-    for (int i = y->used - 1; i >= 0; --i )
+    for ( i = y->used - 1; i >= 0; --i )
         x->digits[i + n] = y->digits[i];
 
     /* Zero out the first n digits */
-    for (int i = 0; i < n; ++i )
+    for ( i = 0; i < n; ++i )
         x->digits[i] = 0;
 
+    oldused = x->used;
     x->used = y->used + n;
+
+    /* Zero out most significant digits (if available) */
+    for ( i = x->used; i < oldused; ++i )
+        x->digits[i] = 0;
 
     return res;
 }
