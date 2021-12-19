@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <stdio.h>
 #include "integer.h"
 #include "prime.h"
 #include "rand.h"
@@ -14,7 +16,24 @@ static uc_digit TRIAL_PRIMES[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41
 
 int uc_is_prime(uc_int *x, int *is_prime)
 {
-    return uc_is_prime_trial_division(x, is_prime);
+    int res;
+
+    *is_prime = UC_FALSE;
+
+    if ( (res = uc_is_prime_trial_division(x, is_prime)) != UC_OK )
+        return res;
+
+    /* Trial-division has found a factor; hence, x is not a prime */
+    if ( *is_prime == UC_FALSE )
+    {
+        puts("Trial division");
+        return res;
+    }
+    else
+        puts("Miller-Rabin");
+
+    /* Use slow but more precise Miller-Rabin test */
+    return uc_is_prime_miller_rabin(x, is_prime, 40);
 }
 
 int uc_is_prime_trial_division(uc_int *x, int *is_prime)
@@ -77,6 +96,8 @@ int uc_is_prime_miller_rabin(uc_int *n, int *is_prime, int t)
         ++s;
     }
 
+
+
     /* Run t tests */
     for ( i = 0; i < t; ++i )
     {
@@ -115,7 +136,6 @@ int uc_is_prime_miller_rabin(uc_int *n, int *is_prime, int t)
             goto cleanup;
         }
     }
-
     *is_prime = UC_TRUE;
 
 cleanup:
