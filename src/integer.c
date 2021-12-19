@@ -1128,34 +1128,12 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
     return UC_OK;
 }
 
-double elapsed0 = 0;
-double elapsed1 = 0;
-double elapsed2 = 0;
-double elapsed3 = 0;
-
-void print_elapsed()
-{
-
-    elapsed0 /= CLOCKS_PER_SEC;
-    elapsed1 /= CLOCKS_PER_SEC;
-    elapsed2 /= CLOCKS_PER_SEC;
-    elapsed3 /= CLOCKS_PER_SEC;
-    printf("Elapsed 0 = %lf ms\n", 1000 * elapsed0);
-    printf("Elapsed 1 = %lf ms\n", 1000 * elapsed1);
-    printf("Elapsed 2 = %lf ms\n", 1000 * elapsed2);
-    printf("Elapsed 3 = %lf ms\n", 1000 * elapsed3);
-}
-
 int s_uc_div_school(uc_int *c, uc_int *d, uc_int *a, uc_int *b)
 {
-    clock_t begin, end;
-    //double elapsed1, elapsed2;
     uc_int q, x, y, t1, t2;
     int n, t, i, norm;
     int neg;
     int err;
-
-    begin = clock();
 
     uc_init(&q);
     if ((err = uc_grow(&q, a->used + 2)) != UC_OK) {
@@ -1205,9 +1183,6 @@ int s_uc_div_school(uc_int *c, uc_int *d, uc_int *a, uc_int *b)
     /* reset y by shifting it back down */
     uc_rshd(&y, &y, n - t);
 
-    end = clock();
-    elapsed0 += end - begin;
-
     /* step 3. for i from n down to (t + 1) */
     for (i = n; i >= (t + 1); i--) {
         if (i > x.used) {
@@ -1228,9 +1203,6 @@ int s_uc_div_school(uc_int *c, uc_int *d, uc_int *a, uc_int *b)
             }
             q.digits[(i - t) - 1] = (uc_digit)(tmp & (uc_word)UC_DIGIT_MASK);
         }
-
-        uc_debug_print_int_radix(&q, 10);
-        exit(0);
 
         /* while (q{i-t-1} * (yt * b + y{t-1})) >
                  xi * b**2 + xi-1 * b + xi-2
@@ -1263,9 +1235,7 @@ int s_uc_div_school(uc_int *c, uc_int *d, uc_int *a, uc_int *b)
         //if ((err = uc_mul_d(&y, q.digits[(i - t) - 1], &t1)) != UC_OK)       goto LBL_Y;
         //if ((err = uc_lshd(&t1, (i - t) - 1)) != UC_OK)                  goto LBL_Y;
         //if ((err = uc_sub(&x, &t1, &x)) != UC_OK)                        goto LBL_Y;
-        begin = clock();
         if ((err = uc_mul_d(&t1, &y, q.digits[(i - t) - 1])) != UC_OK)       goto LBL_Y;
-        end = clock();
         if ((err = uc_lshd(&t1, &t1, (i - t) - 1)) != UC_OK)                  goto LBL_Y;
         if ((err = uc_sub(&x, &x, &t1)) != UC_OK)                        goto LBL_Y;
 
@@ -1278,7 +1248,6 @@ int s_uc_div_school(uc_int *c, uc_int *d, uc_int *a, uc_int *b)
             q.digits[(i - t) - 1] = (q.digits[(i - t) - 1] - 1uL) & UC_DIGIT_MASK;
         }
 
-        elapsed3 += end - begin;
     }
 
     /* now q is the quotient and x is the remainder

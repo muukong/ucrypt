@@ -153,6 +153,7 @@ int uc_sqrd(uc_int *x, uc_int *y);
 int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 int uc_div_2(uc_int *x, uc_int *y);
 int uc_div_d(uc_int *q, uc_digit *r, uc_int *x, uc_digit y);
+int s_uc_div_school(uc_int *c, uc_int *d, uc_int *a, uc_int *b);
 int uc_exp(uc_int *z, uc_int *x, uc_int *y);
 int uc_exp_i(uc_int *z, uc_int *x, int y);
 
