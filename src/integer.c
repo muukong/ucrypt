@@ -1103,33 +1103,45 @@ int s_uc_div_school(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 
     res = UC_OK;
 
+    /* If x < y, set q = 0 and r = x */
+    if ( uc_lt(x, y) )
+    {
+        if ( (res = uc_set_zero(q)) != UC_OK ||
+             (res = uc_copy(r, x)) != UC_OK )
+        {
+            return res;
+        }
+    }
+
     /* Initialize local variables */
     uc_init_multi(&xt, &yt, &tmp, &tmp2, 0, 0);
 
-    // TODO: Handle case x < y
-
     /* Copy inputs to temporary variables */
-    uc_copy(&xt, x);
-    uc_copy(&yt, y);
+    if ( (res = uc_copy(&xt, x)) != UC_OK ||
+         (res = uc_copy(&yt, y)) != UC_OK )
+    {
+        goto cleanup;
+    }
 
     /* Normalize */
 
     norm = uc_count_bits(&yt) % UC_DIGIT_BITS;
-    if (norm < (UC_DIGIT_BITS - 1))
+    if (norm <= (UC_DIGIT_BITS - 1))
     {
         norm = (UC_DIGIT_BITS - 1) - norm + 1;
-        uc_lshb(&xt, &xt, norm);
-        uc_lshb(&yt, &yt, norm);
+        if ( (res = uc_lshb(&xt, &xt, norm)) != UC_OK ||
+             (res = uc_lshb(&yt, &yt, norm)) != UC_OK )
+        {
+            goto cleanup;
+        }
     }
     else
         norm = 0;
 
     n = xt.used - 1;
     t = yt.used - 1;
-    //printf("n = %d\n", n);
-    //printf("t = %d\n", t);
 
-    assert(yt.digits[t] >= UC_INT_BASE / 2); // TODO: remove
+    assert(yt.digits[t] >= UC_INT_BASE / 2); /* check normalization condition */
 
     /* Make sure q and r can hold result */
     uc_grow(q, n - t + 1);
@@ -1142,16 +1154,17 @@ int s_uc_div_school(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 
     /* Step 2 */
 
-    uc_copy(&tmp, &yt);
-    uc_lshd(&tmp, &tmp, n - t);
-
-    //printf("x = "); uc_debug_print_int_radix(&xt, 10);
-    //printf("y = "); uc_debug_print_int_radix(&yt, 10);
+    if ( (res = uc_copy(&tmp, &yt)) != UC_OK ||
+         (res = uc_lshd(&tmp, &tmp, n - t)) != UC_OK )
+    {
+        goto cleanup;
+    }
 
     while ( uc_gt(&xt, &tmp) )
     {
         q->digits[n-t] += 1;
-        uc_sub(&xt, &xt, &tmp);
+        if ( (res = uc_sub(&xt, &xt, &tmp)) != UC_OK )
+            goto cleanup;
     }
 
     /* Step 3 */
@@ -1174,68 +1187,74 @@ int s_uc_div_school(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 
         /* Step 3.2 */
 
-        uc_grow(&tmp, 2);
-        uc_grow(&tmp2, 3);
+        if ( (res = uc_grow(&tmp, 2)) != UC_OK ||
+             (res = uc_grow(&tmp2, 3)) != UC_OK )
+        {
+            goto cleanup;
+        }
+
         while ( 1 )
         {
             /* Left-hand side tmp1 */
-            uc_set_zero(&tmp);
+            if ( (res = uc_set_zero(&tmp)) != UC_OK )
+                goto cleanup;
             tmp.digits[0] = (t - 1 < 0) ? 0 : yt.digits[t-1];
             tmp.digits[1] = yt.digits[t];
             tmp.used = 2;
-            uc_mul_d(&tmp, &tmp, q->digits[i-t-1]);
+            if ( (res = uc_mul_d(&tmp, &tmp, q->digits[i-t-1])) != UC_OK )
+                goto cleanup;
 
             /* Right-hand side tmp2 */
-            uc_set_zero(&tmp2);
+            if ( (res = uc_set_zero(&tmp2)) != UC_OK )
+                goto cleanup;
             tmp2.digits[0] = (t - 2 < 0) ? 0 : xt.digits[i-2];
             tmp2.digits[1] = xt.digits[i-1]; /* loop invariant: i >= 1 */
             tmp2.digits[2] = xt.digits[i];
             tmp2.used = 3;
 
             if ( !uc_gt(&tmp, &tmp2) )
-            {
-                //puts("Break...");
-                //uc_debug_print_int_radix(&tmp, 10);
-                //uc_debug_print_int_radix(&tmp2, 10);
                 break;
-            }
-
-            //puts("No break yet...");
 
             q->digits[i-t-1] -= 1;
         }
 
         /* Step 3.3 */
 
-        uc_copy(&tmp, &yt);
-        uc_mul_d(&tmp, &tmp, q->digits[i - t - 1]);
-        uc_lshd(&tmp, &tmp, i - t - 1);
-        uc_sub(&xt, &xt, &tmp);
+        if ( (res = uc_copy(&tmp, &yt)) != UC_OK ||
+             (res = uc_mul_d(&tmp, &tmp, q->digits[i - t - 1])) != UC_OK ||
+             (res = uc_lshd(&tmp, &tmp, i - t - 1)) != UC_OK ||
+             (res = uc_sub(&xt, &xt, &tmp)) != UC_OK )
+        {
+            goto cleanup;
+        }
 
         /* Step 3.4 */
 
         if ( uc_is_neg(&xt) )
         {
-            uc_copy(&tmp, &yt);
-            uc_lshd(&tmp, &tmp, i - t - 1);
-            uc_add(&xt, &xt, &tmp);
+            if ( (res = uc_copy(&tmp, &yt)) != UC_OK ||
+                 (res = uc_lshd(&tmp, &tmp, i - t - 1)) != UC_OK ||
+                 (res = uc_add(&xt, &xt, &tmp)) != UC_OK )
+            {
+                goto cleanup;
+            }
 
             q->digits[i - t - 1] -= 1;
         }
     }
 
-    uc_copy(r, &xt);
-    uc_rshb(r, r, norm);
+    if ( (res = uc_copy(r, &xt)) != UC_OK ||
+         (res = uc_rshb(r, r, norm)) != UC_OK )
+    {
+        goto cleanup;
+    }
 
     q->used = q->alloc;
     uc_clamp(q);
 
-    //printf("q = "); uc_debug_print_int(q);
-    //uc_debug_print_int_radix(q, 10);
-    //printf("r = "); uc_debug_print_int(r);
-    //uc_debug_print_int_radix(r, 10);
+cleanup:
+    uc_free_multi(&xt, &yt, &tmp, &tmp2, 0, 0);
 
-    /* TODO: Cleanup */
     return res;
 }
 
