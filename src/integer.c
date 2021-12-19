@@ -1093,7 +1093,153 @@ int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
     return UC_OK;
 }
 
-int s_uc_div_school(uc_int *c, uc_int *d, uc_int *a, uc_int *b)
+int s_uc_div_school(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
+{
+    int res;
+    int norm;
+    int i, j;
+    int n, t;
+    uc_int xt, yt, tmp, tmp2;
+
+    res = UC_OK;
+
+    /* Initialize local variables */
+    uc_init_multi(&xt, &yt, &tmp, &tmp2, 0, 0);
+
+    // TODO: Handle case x < y
+
+    /* Copy inputs to temporary variables */
+    uc_copy(&xt, x);
+    uc_copy(&yt, y);
+
+    /* Normalize */
+
+    norm = uc_count_bits(&yt) % UC_DIGIT_BITS;
+    if (norm < (UC_DIGIT_BITS - 1))
+    {
+        norm = (UC_DIGIT_BITS - 1) - norm + 1;
+        uc_lshb(&xt, &xt, norm);
+        uc_lshb(&yt, &yt, norm);
+    }
+    else
+        norm = 0;
+
+    n = xt.used - 1;
+    t = yt.used - 1;
+    //printf("n = %d\n", n);
+    //printf("t = %d\n", t);
+
+    assert(yt.digits[t] >= UC_INT_BASE / 2); // TODO: remove
+
+    /* Make sure q and r can hold result */
+    uc_grow(q, n - t + 1);
+    uc_grow(r, t + 1);
+
+    /* Step 1 */
+
+    for ( j = 0; j <= n - t; ++j )
+        q->digits[j] = 0;
+
+    /* Step 2 */
+
+    uc_copy(&tmp, &yt);
+    uc_lshd(&tmp, &tmp, n - t);
+
+    //printf("x = "); uc_debug_print_int_radix(&xt, 10);
+    //printf("y = "); uc_debug_print_int_radix(&yt, 10);
+
+    while ( uc_gt(&xt, &tmp) )
+    {
+        q->digits[n-t] += 1;
+        uc_sub(&xt, &xt, &tmp);
+    }
+
+    /* Step 3 */
+    for ( i = n; i >= t + 1; --i )
+    {
+        /* Step 3.1 */
+
+        if ( xt.digits[i] == yt.digits[t])
+        {
+            q->digits[i-t-1] = UC_INT_BASE - 1;
+        }
+        else
+        {
+            uc_word acc = (uc_word) xt.digits[i];
+            acc *= UC_INT_BASE;
+            acc += xt.digits[i-1];
+            acc /= yt.digits[t];
+            q->digits[i-t-1] = acc;
+        }
+
+        /* Step 3.2 */
+
+        uc_grow(&tmp, 2);
+        uc_grow(&tmp2, 3);
+        while ( 1 )
+        {
+            /* Left-hand side tmp1 */
+            uc_set_zero(&tmp);
+            tmp.digits[0] = (t - 1 < 0) ? 0 : yt.digits[t-1];
+            tmp.digits[1] = yt.digits[t];
+            tmp.used = 2;
+            uc_mul_d(&tmp, &tmp, q->digits[i-t-1]);
+
+            /* Right-hand side tmp2 */
+            uc_set_zero(&tmp2);
+            tmp2.digits[0] = (t - 2 < 0) ? 0 : xt.digits[i-2];
+            tmp2.digits[1] = xt.digits[i-1]; /* loop invariant: i >= 1 */
+            tmp2.digits[2] = xt.digits[i];
+            tmp2.used = 3;
+
+            if ( !uc_gt(&tmp, &tmp2) )
+            {
+                //puts("Break...");
+                //uc_debug_print_int_radix(&tmp, 10);
+                //uc_debug_print_int_radix(&tmp2, 10);
+                break;
+            }
+
+            //puts("No break yet...");
+
+            q->digits[i-t-1] -= 1;
+        }
+
+        /* Step 3.3 */
+
+        uc_copy(&tmp, &yt);
+        uc_mul_d(&tmp, &tmp, q->digits[i - t - 1]);
+        uc_lshd(&tmp, &tmp, i - t - 1);
+        uc_sub(&xt, &xt, &tmp);
+
+        /* Step 3.4 */
+
+        if ( uc_is_neg(&xt) )
+        {
+            uc_copy(&tmp, &yt);
+            uc_lshd(&tmp, &tmp, i - t - 1);
+            uc_add(&xt, &xt, &tmp);
+
+            q->digits[i - t - 1] -= 1;
+        }
+    }
+
+    uc_copy(r, &xt);
+    uc_rshb(r, r, norm);
+
+    q->used = q->alloc;
+    uc_clamp(q);
+
+    //printf("q = "); uc_debug_print_int(q);
+    //uc_debug_print_int_radix(q, 10);
+    //printf("r = "); uc_debug_print_int(r);
+    //uc_debug_print_int_radix(r, 10);
+
+    /* TODO: Cleanup */
+    return res;
+}
+
+int s_uc_div_school_old(uc_int *c, uc_int *d, uc_int *a, uc_int *b)
 {
     uc_int q, x, y, t1, t2;
     int n, t, i, norm;
@@ -1130,6 +1276,7 @@ int s_uc_div_school(uc_int *c, uc_int *d, uc_int *a, uc_int *b)
     } else {
         norm = 0;
     }
+    printf("norm = %d\n", norm);
 
     /* note hac does 0 based, so if used==5 then its 0,1,2,3,4, e.g. use 4 */
     n = x.used - 1;
