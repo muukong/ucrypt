@@ -107,11 +107,6 @@ int uc_rand_int(uc_int *x, uc_int *b)
 
     uc_init_multi(&b_, &base_power, 0, 0, 0, 0);
 
-    /* Make sure x can hold result */
-    // TODO: can probably be deleted
-    //if ( (res = uc_grow(x, b->used)) != UC_OK )
-    //    goto cleanup;
-
     /*
      * We can easily generate numbers in the range [0,base^k) for any integer k >= 0. We therefore
      * find the smallest base power (i.e., base^k) s.t. b < base^k.
@@ -139,7 +134,7 @@ int uc_rand_int(uc_int *x, uc_int *b)
      * we can then map to the original interval [0,b] with x = x_ % b without loosing uniformity.
      */
     do {
-        if ( (res = uc_rand_int_base_pow(x, base_power.used)) != UC_OK )
+        if ( (res = uc_rand_int_base_pow(x, base_power.used - 1)) != UC_OK )
             goto cleanup;
     } while ( uc_gte(x, &b_) );
 
