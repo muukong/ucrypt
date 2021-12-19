@@ -833,7 +833,7 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y)
  */
 int uc_mul(uc_int *z, uc_int *x, uc_int *y)
 {
-    return uc_mul_digs(z, x, y, x->used * y->used);
+    return uc_mul_digs(z, x, y, x->used + y->used);
 }
 
 /*
@@ -855,12 +855,23 @@ int uc_mul_digs(uc_int *z, uc_int *x, uc_int *y, int digits)
         goto cleanup;
     }
 
-    if ( (res = _uc_mul_digs(z, &xt, &yt, digits)) != UC_OK )
-        goto cleanup;
+    if ((UC_MIN(digits, UC_MIN(x->used, y->used))) <= UC_COMBA_MUL_MAX_DIGS )
+    {
+        /* We can use faster Comba multiplication */
+        if ( (res = _uc_mul_digs_comba(z, &xt, &yt, digits)) != UC_OK )
+            goto cleanup;
+    }
+    else
+    {
+        /* Fallback to slow multiplication */
+        if ( (res = _uc_mul_digs(z, &xt, &yt, digits)) != UC_OK )
+            goto cleanup;
+    }
+
     if ( x->sign != y->sign )
         z->sign = UC_NEG;
 
-    cleanup:
+cleanup:
     uc_free(&xt);
     uc_free(&yt);
 
