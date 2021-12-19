@@ -671,7 +671,7 @@ int _uc_mul_karatsuba(uc_int *C, uc_int *A, uc_int *B, int N)
     uc_add(C, C, &tmp1);
 
 
-cleanup:
+//cleanup:
     uc_free_multi(&tmp1, &tmp2, &a0, &a1, &b0, &b1);
     uc_free_multi(&c0, &c1, &c2, 0, 0, 0);
 
@@ -1272,34 +1272,6 @@ int s_uc_div_school(uc_int *c, uc_int *d, uc_int *a, uc_int *b)
     return err;
 }
 
-int _uc_div_rec(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
-{
-
-}
-
-int uc_div_rec(uc_int *q, uc_int *r, uc_int *A, uc_int *B)
-{
-    int k;
-    int m, n;
-    uc_int b0, b1;
-    uc_int q0, r0, q1, r1;
-
-    uc_init_multi(&b0, &b1, &q0, &r0, &q1, &r1);
-
-    n = B->used - 1;
-    m = A->used - n + 1;
-
-    k = m / 2;
-
-
-    uc_lshd(&b1, B, k);
-    uc_mod_base_pow(&b0, B, k);
-
-
-
-
-}
-
 /*
  * Compute r and q s.t. x = q * y + r where r < y. The following preconditions must be met:
  * - y is normalized (i.e., its most significant digit is at least BASE / 2)
@@ -1309,7 +1281,7 @@ int uc_div_rec(uc_int *q, uc_int *r, uc_int *A, uc_int *B)
 static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 {
     int m, n;
-    int i, j;
+    int j;
     uc_word q_estimate;
     uc_int ta, tb, tc;
 
@@ -2488,7 +2460,7 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
     uc_int tmp;
 
     /*
-    /* Initialize x with zero and ensure that we have enough room
+     * Initialize x with zero and ensure that we have enough room
      */
     uc_set_zero(x);
     uc_grow(x, (strlen(y) * radix) / UC_INT_BASE + 1);
@@ -2602,8 +2574,8 @@ int uc_write_radix(char *s, int n, uc_int *x, int radix)
         uc_set_zero(&q);
         uc_div_d(&q, &r, &xt, radix);
 
-        assert(0 <= r && r < radix);
-        if (0 <= r && r < 10)
+        assert( r < (uc_digit) radix);
+        if ( r < 10 ) /* Note: r >= 0 is implicit since it is unsigned */
             s[digit_ctr++] = '0' + r;
         else
             s[digit_ctr++] = 'A' + (r - 10);
@@ -2638,6 +2610,7 @@ cleanup:
  * slower since it relies on MP-division instead of division by a digit. This was tested for integers
  * with up to 16k bits.
  */
+/*
 int uc_write_radix_slow(char *s, int n, uc_int *x, int radix)
 {
     int res;
@@ -2649,6 +2622,7 @@ int uc_write_radix_slow(char *s, int n, uc_int *x, int radix)
     s[s_len] = 0;
     return res;
 }
+*/
 
 int _uc_write_radix_slow(char *s, int *n, uc_int *x, int radix)
 {
