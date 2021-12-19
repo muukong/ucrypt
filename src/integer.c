@@ -307,13 +307,7 @@ int uc_set_w(uc_int *x, uc_word n)
     uc_set_zero(x);
     uc_grow(x, sizeof(n) / sizeof(uc_word) + 2);
 
-    if ( n < 0 )
-    {
-        x->sign = UC_NEG;
-        n *= -1; // TODO: can this overflow?
-    }
-    else
-        x->sign = UC_POS;
+    x->sign = UC_POS;
 
     int digit_ctr = 0;
     uc_digit d = 0;
