@@ -19,18 +19,30 @@
  *  beta is the digit base
  */
 
-/*
-typedef unsigned char uc_digit;
-typedef unsigned short uc_word;
-#define UC_DIGIT_BITS   7u
-#define UC_COMBA_MUL_MAX_DIGS 4
- */
+//#define UC_DIGIT_8BIT
+//#define UC_DIGIT_32BIT
+#define UC_DIGIT_64BIT
 
-typedef unsigned int    uc_digit;
-typedef unsigned long   uc_word;
-#define UC_DIGIT_BITS      28u  /* Note: We use 28 (instead of the more intuitive 31) since this allows us to use
-                                         Comba multiplication for reasonably sized inputs */
-#define UC_COMBA_MUL_MAX_DIGS 256
+#ifdef UC_DIGIT_8BIT
+    typedef unsigned char uc_digit;
+    typedef unsigned short uc_word;
+    #define UC_DIGIT_BITS   7u
+    #define UC_COMBA_MUL_MAX_DIGS 4
+#endif
+
+#ifdef UC_DIGIT_32BIT
+    typedef unsigned int    uc_digit;
+    typedef unsigned long   uc_word;
+    #define UC_DIGIT_BITS      28u
+    #define UC_COMBA_MUL_MAX_DIGS 255
+#endif
+
+#ifdef UC_DIGIT_64BIT
+    typedef uint64_t        uc_digit;
+    typedef __uint128_t     uc_word;
+    #define UC_DIGIT_BITS   60
+    #define UC_COMBA_MUL_MAX_DIGS 255
+#endif
 
 /*
  * Multi-precision integer data strcture.
@@ -56,7 +68,7 @@ typedef struct
 #define UC_GT 1
 
 #define UC_INT_BASE     (((uc_word) 1) << UC_DIGIT_BITS)
-#define UC_DIGIT_MASK ((uc_digit) ~(((uc_digit) ~0) << UC_DIGIT_BITS))
+#define UC_DIGIT_MASK ((uc_digit) ~((~((uc_digit) 0)) << UC_DIGIT_BITS))
 
 #define UC_OK               1       // Indicates that operation was successful
 #define UC_INPUT_ERR        -1      // Indicates that operation was not successful
