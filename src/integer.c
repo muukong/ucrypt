@@ -1747,9 +1747,11 @@ int uc_rshd(uc_int *z, uc_int *x, int y)
     for ( i = 0; i < x->used - y; ++i )
         z->digits[i] = x->digits[i+y];
 
-    z->used = x->used - y;
     for ( ; i < z->used; ++i )
         z->digits[i] = 0;
+
+    z->used = x->used - y;
+
 
     return res;
 }
