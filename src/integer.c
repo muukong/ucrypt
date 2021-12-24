@@ -1507,17 +1507,19 @@ int uc_exp(uc_int *z, uc_int *x, uc_int *y)
 /*
  * Compute z = x ^ y
  */
-int uc_exp_i(uc_int *z, uc_int *x, int y) {
+int uc_exp_i(uc_int *z, uc_int *x, int y)
+{
     int res;
     uc_int yt;
 
     res = UC_OK;
 
-    if ((res = uc_init(&yt)) != UC_OK)
+    if ( (res = uc_init(&yt)) != UC_OK )
         return res;
 
-    if ((res = uc_set_i(&yt, y)) != UC_OK ||
-        (res = uc_exp(z, x, &yt)) != UC_OK) {
+    if ( (res = uc_set_i(&yt, y)) != UC_OK ||
+         (res = uc_exp(z, x, &yt)) != UC_OK )
+    {
         goto cleanup;
     }
 
@@ -1534,7 +1536,8 @@ int uc_exp_i(uc_int *z, uc_int *x, int y) {
  *
  * The parameter can be calculated with uc_montgomery_setup(..).
  */
-int uc_montgomery_reduce(uc_int *x, uc_int *n, uc_digit rho) {
+int uc_montgomery_reduce(uc_int *x, uc_int *n, uc_digit rho)
+{
     int i, j, k, res, digs;
     uc_digit u, mu;
     uc_word r;
@@ -1549,18 +1552,21 @@ int uc_montgomery_reduce(uc_int *x, uc_int *n, uc_digit rho) {
         return res;
     x->used = digs;
 
-    for (i = 0; i < k; ++i) {
+    for (i = 0; i < k; ++i)
+    {
         mu = (uc_digit) (((uc_word) x->digits[i] * (uc_word) rho) & UC_DIGIT_MASK);
 
         u = 0; /* carry */
 
-        for (j = 0; j < k; ++j) {
+        for (j = 0; j < k; ++j)
+        {
             r = ((uc_word) mu * (uc_word) n->digits[j]) + (uc_word) u + (uc_word) x->digits[i + j];
             u = (uc_digit) (r >> ((uc_word) UC_DIGIT_BITS));
             x->digits[i + j] = (uc_digit) (r & ((uc_word) UC_DIGIT_MASK));
         }
 
-        while (u != 0) {
+        while (u != 0)
+        {
             x->digits[i + j] += u;
             u = x->digits[i + j] >> UC_DIGIT_BITS;
             x->digits[i + j] &= UC_DIGIT_MASK;
@@ -1568,11 +1574,13 @@ int uc_montgomery_reduce(uc_int *x, uc_int *n, uc_digit rho) {
     }
 
     if ((res = uc_clamp(x)) != UC_OK ||
-        (res = uc_rshd(x, x, k)) != UC_OK) {
+        (res = uc_rshd(x, x, k)) != UC_OK)
+    {
         return res;
     }
 
-    if (uc_cmp_mag(x, n) != UC_LT) {
+    if (uc_cmp_mag(x, n) != UC_LT)
+    {
         if ((res = uc_sub(x, x, n)) != UC_OK)
             return res;
     }
@@ -1587,7 +1595,8 @@ int uc_montgomery_reduce(uc_int *x, uc_int *n, uc_digit rho) {
  * The algorithm is based on the observation that:
  *  a*x = 1 (mod 2^k) ==> a*x*(2-a*x) = 1 (mod 2^{2*k})
  */
-int uc_montgomery_setup(uc_int *n, uc_digit *rho) {
+int uc_montgomery_setup(uc_int *n, uc_digit *rho)
+{
     uc_digit b, x;
 
     b = n->digits[0];
