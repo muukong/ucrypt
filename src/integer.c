@@ -1482,50 +1482,141 @@ int uc_exp(uc_int *z, uc_int *x, uc_int *y)
          * bit y_i.
          */
 
-        if ( (res = uc_mul(&tmp, z, &xt)) != UC_OK )
+        if ((res = uc_mul(&tmp, z, &xt)) != UC_OK)
             goto cleanup;
 
-        if ( uc_nth_bit(&yt,i) == 1 )
+        if (uc_nth_bit(&yt, i) == 1)
             uc_copy(z, &tmp);
         else
             uc_copy(z, z);
     }
 
     /* Fix sign */
-    if ( uc_is_neg(&xt) && uc_is_odd(&yt) )
+    if (uc_is_neg(&xt) && uc_is_odd(&yt))
         z->sign = UC_NEG;
     else
         z->sign = UC_POS;
 
-cleanup:
+    cleanup:
     uc_free_multi(&xt, &yt, &tmp, 0, 0, 0);
 
     return res;
 }
 
+
 /*
  * Compute z = x ^ y
  */
-int uc_exp_i(uc_int *z, uc_int *x, int y)
-{
+int uc_exp_i(uc_int *z, uc_int *x, int y) {
     int res;
     uc_int yt;
 
     res = UC_OK;
 
-    if ( (res = uc_init(&yt)) != UC_OK )
+    if ((res = uc_init(&yt)) != UC_OK)
         return res;
 
-    if ( (res = uc_set_i(&yt, y)) != UC_OK ||
-         (res = uc_exp(z, x, &yt)) != UC_OK )
-    {
+    if ((res = uc_set_i(&yt, y)) != UC_OK ||
+        (res = uc_exp(z, x, &yt)) != UC_OK) {
         goto cleanup;
     }
 
-cleanup:
+    cleanup:
     uc_free(&yt);
 
     return res;
+}
+
+/*
+ * Calculates 2^{-k} * x (mod n) where the input satisfies
+ * 1) 0 <= x < n*2
+ * 2) gcd(n, base) = 1
+ *
+ * The parameter can be calculated with uc_montgomery_setup(..).
+ */
+int uc_montgomery_reduce(uc_int *x, uc_int *n, uc_digit rho) {
+    int i, j, k, res, digs;
+    uc_digit u, mu;
+    uc_word r;
+
+    res = UC_OK;
+
+    digs = 2 * n->used + 1;
+    k = n->used;
+
+    /* Make sure x can hold result */
+    if ((res = uc_grow(x, digs)) != UC_OK)
+        return res;
+    x->used = digs;
+
+    for (i = 0; i < k; ++i) {
+        mu = (uc_digit) (((uc_word) x->digits[i] * (uc_word) rho) & UC_DIGIT_MASK);
+
+        u = 0; /* carry */
+
+        for (j = 0; j < k; ++j) {
+            r = ((uc_word) mu * (uc_word) n->digits[j]) + (uc_word) u + (uc_word) x->digits[i + j];
+            u = (uc_digit) (r >> ((uc_word) UC_DIGIT_BITS));
+            x->digits[i + j] = (uc_digit) (r & ((uc_word) UC_DIGIT_MASK));
+        }
+
+        while (u != 0) {
+            x->digits[i + j] += u;
+            u = x->digits[i + j] >> UC_DIGIT_BITS;
+            x->digits[i + j] &= UC_DIGIT_MASK;
+        }
+    }
+
+    if ((res = uc_clamp(x)) != UC_OK ||
+        (res = uc_rshd(x, x, k)) != UC_OK) {
+        return res;
+    }
+
+    if (uc_cmp_mag(x, n) != UC_LT) {
+        if ((res = uc_sub(x, x, n)) != UC_OK)
+            return res;
+    }
+
+    return res;
+}
+
+/*
+ * Fast inverse computation for rho = -1/n->digits[0] (mod base) where n > 1
+ * and gcd(n, base) = 1.
+ *
+ * The algorithm is based on the observation that:
+ *  a*x = 1 (mod 2^k) ==> a*x*(2-a*x) = 1 (mod 2^{2*k})
+ */
+int uc_montgomery_setup(uc_int *n, uc_digit *rho) {
+    uc_digit b, x;
+
+    b = n->digits[0];
+
+    /* Make sure that n > 1 and n odd */
+    if (uc_is_neg(n) || b == 1 || b % 2 == 0)
+        return UC_INPUT_ERR;
+
+
+    x = (((b + 2u) & 4u) << 1) + b;   /* x * b = 1 (mod 2^4) */
+    x *= 2 - b * x;                 /* x * b = 1 (mod 2^8) */
+
+    /* We iterate the "loop" of the algorithm based on the size of the UC integer digits */
+
+#if !defined(UC_DIGIT_8BIT)
+    x *= 2 - b * x;                 /* x * b = 1 (mod 2^16) */
+#endif
+
+#if !(defined(UC_DIGIT_8BIT) || defined(UC_DIGIT_16BIT))
+    x *= 2 - b * x;                 /* x * b = 1 (mod 2^32 */
+#endif
+
+#if !(defined(UC_DIGIT_8BIT) || defined(UC_DIGIT_16BIT) || defined(UC_DIGIT_32BIT))
+    x *= 2 - b * x;                 /* x * b = 1 (mod 2^64) */
+#endif
+
+    *rho = (uc_digit) (((uc_word) 1 << ((uc_word) UC_DIGIT_BITS)) - x) & UC_DIGIT_MASK;
+
+    return UC_OK;
 }
 
 /*
@@ -1969,6 +2060,46 @@ int uc_exp_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
 
     return res;
 }
+
+
+int uc_exp_mod_mont(uc_int *z, uc_int *x, uc_int *y, uc_int *m) {
+    int i, res, nbits;
+    uc_digit rho;
+    uc_int xt, yt;
+    uc_int tmp;
+
+    res = UC_OK;
+
+    uc_init_multi(&xt, &yt, &tmp, 0, 0, 0);
+    uc_copy(&xt, x);
+    uc_copy(&yt, y);
+
+    uc_montgomery_setup(m, &rho);
+
+    /*
+     * Put base xt in montgomery form
+     */
+    uc_lshd(&xt, &xt, m->used);
+    uc_mod(&xt, &xt, m);
+
+    uc_copy(z, &xt); /* Assume that most significant bit in exponent is 1 */
+
+    nbits = uc_count_bits(&yt);
+    for (i = nbits - 2; i >= 0; --i) {
+        uc_mul(z, z, z);
+        uc_montgomery_reduce(z, m, rho);
+
+        if (uc_nth_bit(&yt, i) == 1 || 1) {
+            uc_mul(z, z, &xt);
+            uc_montgomery_reduce(z, m, rho);
+        }
+    }
+
+    res = uc_montgomery_reduce(z, m, rho);
+
+    return res;
+}
+
 
 /*
  * Compute inverse x of y modulo m, i.e., s.t. x * y = 1 (mod m)

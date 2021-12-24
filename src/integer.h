@@ -19,7 +19,9 @@
  *  beta is the digit base
  */
 
+/* Defines bit size of UC digit variable */
 //#define UC_DIGIT_8BIT
+//#define UC_DIGIT_16BIT
 //#define UC_DIGIT_32BIT
 #define UC_DIGIT_64BIT
 
@@ -158,6 +160,9 @@ int uc_div_d(uc_int *q, uc_digit *r, uc_int *x, uc_digit y);
 int uc_exp(uc_int *z, uc_int *x, uc_int *y);
 int uc_exp_i(uc_int *z, uc_int *x, int y);
 
+int uc_montgomery_setup(uc_int *x, uc_digit *rho);
+int uc_montgomery_reduce(uc_int *x, uc_int *n, uc_digit rho);
+
 
 int uc_lshb(uc_int *x, uc_int *y, int n);
 int uc_rshb(uc_int *x, uc_int *y, int n);
@@ -183,6 +188,7 @@ int uc_count_bits(uc_int *x);
 int uc_add_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
 int uc_mul_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
 int uc_exp_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
+int uc_exp_mod_mont(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
 int uc_mod_inv(uc_int *x, uc_int *y, uc_int *m);
 
 int uc_mod(uc_int *x, uc_int *y, uc_int *m);
