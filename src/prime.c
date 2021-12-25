@@ -25,12 +25,7 @@ int uc_is_prime(uc_int *x, int *is_prime)
 
     /* Trial-division has found a factor; hence, x is not a prime */
     if ( *is_prime == UC_FALSE )
-    {
-        puts("Trial division");
         return res;
-    }
-    else
-        puts("Miller-Rabin");
 
     /* Use slow but more precise Miller-Rabin test */
     return uc_is_prime_miller_rabin(x, is_prime, 40);
@@ -95,8 +90,6 @@ int uc_is_prime_miller_rabin(uc_int *n, int *is_prime, int t)
         uc_div_2(&r, &r);
         ++s;
     }
-
-
 
     /* Run t tests */
     for ( i = 0; i < t; ++i )

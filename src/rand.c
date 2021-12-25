@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "integer.h"
 #include "rand.h"
+#include "prime.h"
 
 /*
  * TODO:
@@ -221,5 +222,24 @@ int uc_rand_digit(uc_digit *d)
 #endif
 
     return res;
+}
+
+int uc_gen_rand_prime(uc_int *x, uc_int *a, uc_int *b)
+{
+    int res, is_prime;
+
+    is_prime = UC_FALSE;
+
+    do
+    {
+        if ( (res = uc_rand_int_range(x, a, b)) != UC_OK ||
+             (res = uc_is_prime(x, &is_prime)) != UC_OK )
+        {
+            return res;
+        }
+
+    } while ( is_prime == UC_FALSE );
+
+    return UC_OK;
 }
 
