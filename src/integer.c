@@ -549,7 +549,7 @@ int _uc_mul_digs_comba(uc_int *z, uc_int *x, uc_int *y, int digits)
     for ( i = 0; i < UC_COMBA_MUL_MAX_DIGS; ++i )
         ws[i] = 0;
 
-    i_max = UC_MIN(digits, x->used + y->used );
+    i_max = UC_MIN(digits, UC_MIN(x->used, y->used ));
 
     if (i_max > UC_COMBA_MUL_MAX_DIGS )
         return UC_INPUT_ERR;
