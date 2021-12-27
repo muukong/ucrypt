@@ -870,8 +870,9 @@ cleanup:
  */
 static int _uc_mul_digs(uc_int *z, uc_int *x, uc_int *y, int digits)
 {
-    int i, j, j_max, c;
     int res;
+    int i, j, j_max;
+    uc_digit c;
 
     /* Make sure z can hold result and set z = 0 */
     if ( (res = uc_grow(z, digits)) != UC_OK ||
@@ -892,8 +893,8 @@ static int _uc_mul_digs(uc_int *z, uc_int *x, uc_int *y, int digits)
         {
             /* tmp = r_ij + x_j * y_i + c */
             uc_word tmp = ((uc_word) z->digits[i + j]) +
-                          ((uc_word) x->digits[j]) *
-                          ((uc_word) y->digits[i]) +
+                          ((uc_word) x->digits[i]) *
+                          ((uc_word) y->digits[j]) +
                           ((uc_word) c);
 
             z->digits[i + j] = tmp & UC_DIGIT_MASK;
