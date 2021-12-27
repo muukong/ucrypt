@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "integer.h"
-#include "string_util.h"
-#include "ucalloc.h"
+#include <ucrypt/integer.h>
+#include <ucrypt/string_util.h>
+#include <ucrypt/ucalloc.h>
 
 /*
  * Helper functions that are only used internally

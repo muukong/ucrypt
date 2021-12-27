@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "integer.h"
-#include "prime.h"
-#include "rand.h"
+#include <ucrypt/integer.h>
+#include <ucrypt/prime.h>
+#include <ucrypt/rand.h>
 
 /*
  * Small list of prime numbers for trial division. This list was chosen for two reasons:

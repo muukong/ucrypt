@@ -1,9 +1,9 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
-#include "integer.h"
-#include "rand.h"
-#include "prime.h"
+#include <ucrypt/integer.h>
+#include <ucrypt/rand.h>
+#include <ucrypt/prime.h>
 
 /*
  * TODO:

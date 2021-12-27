@@ -8,8 +8,18 @@ if (MSVC)
     add_compile_options(/W4 /WX)
 else()
     # lots of warnings and all warnings as errors
-    #add_compile_options(-Wall -Wextra -pedantic -Werror)
     add_compile_options(-Wall -Wextra -pedantic)
 endif()
 
-add_executable(ucrypt main.c src/integer.h src/integer.c src/ucalloc.h src/string_util.h src/string_util.c src/prime.c src/prime.h src/rand.h src/rand.c)
+# Add library build target
+add_subdirectory(src)
+
+# Add testing targets
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+
+    set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1) # Disable CTest's default targets
+    include(CTest)
+
+    add_subdirectory(test)
+endif()
+
