@@ -6,7 +6,7 @@
 #include <uctest/testcase.h>
 #include <testdata.h>
 
-#define BUF_LEN (4096)
+#define BUF_LEN (8 * 4096)
 #define RADIX 16
 
 char *test_mul()
@@ -37,12 +37,27 @@ char *test_mul()
         /* Check x * y */
         if ( uc_mul(&z, &x, &y) != UC_OK )
             mu_assert("Error during uc_mul computation", 0);
-        mu_assert("[!] Multiplication wrong result.", uc_eq(&z, &z_));
 
-        /* Check y * y */
+        if ( !uc_eq(&z, &z_) )
+        {
+            printf("x = "); uc_debug_print_int_radix(&x, 16);
+            printf("y = "); uc_debug_print_int_radix(&y, 16);
+            printf("z_ = "); uc_debug_print_int_radix(&z_, 16);
+            printf("z = "); uc_debug_print_int_radix(&z, 16);
+            mu_assert("[!] uc_mul wrong result (x*y).", 0);
+        }
+
+        /* Check y * x */
         if ( uc_mul(&z, &y, &x) != UC_OK )
             mu_assert("Error during uc_mul computation", 0);
-        mu_assert("[!] Multiplication wrong result.", uc_eq(&z, &z_));
+        if ( !uc_eq(&z, &z_) )
+        {
+            printf("x = "); uc_debug_print_int_radix(&x, 16);
+            printf("y = "); uc_debug_print_int_radix(&y, 16);
+            printf("z_ = "); uc_debug_print_int_radix(&z_, 16);
+            printf("z = "); uc_debug_print_int_radix(&z, 16);
+            mu_assert("[!] uc_mul wrong result (y*x).", 0);
+        }
     }
 
     uc_testcase_free(&t);
