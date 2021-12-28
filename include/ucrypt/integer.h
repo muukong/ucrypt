@@ -46,6 +46,8 @@
     #define UC_COMBA_MUL_MAX_DIGS 255
 #endif
 
+#define UC_COMBA_ARRAY_LEN (UC_COMBA_MUL_MAX_DIGS + 1)
+
 /*
  * Multi-precision integer data strcture.
  *

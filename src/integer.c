@@ -536,23 +536,24 @@ int _uc_mul_digs_comba(uc_int *z, uc_int *x, uc_int *y, int digits)
     int res;
     int tx, ty;
     int i, j, i_max, j_max;
-    uc_word ws[UC_COMBA_MUL_MAX_DIGS];
+    uc_word ws[UC_COMBA_ARRAY_LEN];
     uc_word w;
 
     res = UC_OK;
+
+    /* Check that Comba multiplication can be used for given input */
+    if ( digits > UC_COMBA_ARRAY_LEN || UC_MIN(x->used, y->used) > UC_COMBA_MUL_MAX_DIGS)
+        return UC_INPUT_ERR;
 
     if ( ( res = uc_grow(z, digits)) != UC_OK )
     {
         return res;
     }
 
-    for ( i = 0; i < UC_COMBA_MUL_MAX_DIGS; ++i )
+    for ( i = 0; i < UC_COMBA_ARRAY_LEN; ++i )
         ws[i] = 0;
 
-    i_max = UC_MIN(digits, UC_MIN(x->used, y->used ));
-
-    if (i_max > UC_COMBA_MUL_MAX_DIGS )
-        return UC_INPUT_ERR;
+    i_max = UC_MIN(digits, x->used + y->used);
 
     w = 0;
     for ( i = 0; i < i_max; ++i ) /* Calculate column by column (i.e. i is column index) */
@@ -567,7 +568,7 @@ int _uc_mul_digs_comba(uc_int *z, uc_int *x, uc_int *y, int digits)
                  ((uc_word) y->digits[tx - j]);
         }
 
-        assert(i < UC_COMBA_MUL_MAX_DIGS);
+        assert(i < UC_COMBA_ARRAY_LEN);
         ws[i] = w % UC_INT_BASE;
         w /= UC_INT_BASE;
     }
@@ -840,21 +841,25 @@ int uc_mul_digs(uc_int *z, uc_int *x, uc_int *y, int digits)
         goto cleanup;
     }
 
-    if ((UC_MIN(digits, UC_MIN(x->used, y->used))) <= UC_COMBA_MUL_MAX_DIGS )
+    if ( digits < UC_COMBA_ARRAY_LEN && UC_MIN(x->used, y->used) <= UC_COMBA_MUL_MAX_DIGS )
     {
         /* We can use faster Comba multiplication */
+        puts("Comba");
         if ( (res = _uc_mul_digs_comba(z, &xt, &yt, digits)) != UC_OK )
             goto cleanup;
     }
     else
     {
         /* Fallback to slow multiplication */
+        puts("Normal");
         if ( (res = _uc_mul_digs(z, &xt, &yt, digits)) != UC_OK )
             goto cleanup;
     }
 
     if ( x->sign != y->sign )
         z->sign = UC_NEG;
+    else
+        z->sign = UC_POS;
 
 cleanup:
     uc_free(&xt);
