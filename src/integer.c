@@ -1168,6 +1168,10 @@ int uc_div_school_fast(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 
     assert(yt.digits[t] >= UC_INT_BASE / 2); /* check normalization condition */
 
+    /* Erase output variables */
+    uc_set_zero(q);
+    uc_set_zero(r);
+
     /* Make sure q and r can hold result */
     uc_grow(q, n - t + 1);
     uc_grow(r, t + 1);
