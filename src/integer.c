@@ -1546,7 +1546,7 @@ int uc_exp_i(uc_int *z, uc_int *x, int y)
  */
 int uc_montgomery_reduce(uc_int *x, uc_int *n, uc_digit rho)
 {
-    int i, j, k, res, digs;
+    int i, j, idx, k, res, digs;
     uc_digit u, mu;
     uc_word r;
 
@@ -1573,11 +1573,11 @@ int uc_montgomery_reduce(uc_int *x, uc_int *n, uc_digit rho)
             x->digits[i + j] = (uc_digit) (r & ((uc_word) UC_DIGIT_MASK));
         }
 
-        while (u != 0)
+        for ( idx = 0; u != 0; ++idx )
         {
-            x->digits[i + j] += u;
-            u = x->digits[i + j] >> UC_DIGIT_BITS;
-            x->digits[i + j] &= UC_DIGIT_MASK;
+            x->digits[i + j + idx] += u;
+            u = x->digits[i + j + idx] >> UC_DIGIT_BITS;
+            x->digits[i + j + idx] &= UC_DIGIT_MASK;
         }
     }
 
@@ -2079,40 +2079,78 @@ int uc_exp_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
 }
 
 
-int uc_exp_mod_mont(uc_int *z, uc_int *x, uc_int *y, uc_int *m) {
+int uc_exp_mod_mont(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
+{
     int i, res, nbits;
     uc_digit rho;
-    uc_int xt, yt;
-    uc_int tmp;
+    uc_int xt;
 
     res = UC_OK;
 
-    uc_init_multi(&xt, &yt, &tmp, 0, 0, 0);
-    uc_copy(&xt, x);
-    uc_copy(&yt, y);
+    /*
+     * Check the following conditions:
+     * 1) y >= 0
+     * 2) x < m
+     * 3) m is odd (we need that gcd(m, base) == 1)
+     */
+    if ( uc_is_neg(y) || uc_gte(x, m) || uc_is_even(m) )
+        return UC_INPUT_ERR;
 
-    uc_montgomery_setup(m, &rho);
+    if ( uc_is_one(y) )
+    {
+        uc_copy(z, x);
+        return UC_OK;
+    }
+
+    if ( (res = uc_init(&xt) != UC_OK) )
+        return res;
+
+    if ( (res = uc_copy(&xt, x)) != UC_OK )
+        goto cleanup;
+
+    rho = 0;
+    if ( (res = uc_montgomery_setup(m, &rho)) != UC_OK )
+        goto cleanup;
 
     /*
-     * Put base xt in montgomery form
+     * Let n the number of digits in m and R = base ^ n. Compute Montgomery form:
+     *      xt := xt * R (mod m)
      */
-    uc_lshd(&xt, &xt, m->used);
-    uc_mod(&xt, &xt, m);
+    if ( (res = uc_lshd(&xt, &xt, m->used)) != UC_OK ||
+         (res = uc_mod(&xt, &xt, m)) != UC_OK )
+    {
+        goto cleanup;
+    }
 
-    uc_copy(z, &xt); /* Assume that most significant bit in exponent is 1 */
+    /* We know that y >= 1 */
+    if ( (res = uc_copy(z, &xt)) != UC_OK )
+        return res;
 
-    nbits = uc_count_bits(&yt);
-    for (i = nbits - 2; i >= 0; --i) {
-        uc_mul(z, z, z);
-        uc_montgomery_reduce(z, m, rho);
+    nbits = uc_count_bits(y);
+    for (i = nbits - 2; i >= 0; --i)
+    {
+        /* z := z * z and then reduce */
+        if ( (res = uc_mul(z, z, z)) != UC_OK ||
+             (res = uc_montgomery_reduce(z, m, rho)) != UC_OK )
+        {
+            goto cleanup;
+        }
 
-        if (uc_nth_bit(&yt, i) == 1 || 1) {
-            uc_mul(z, z, &xt);
-            uc_montgomery_reduce(z, m, rho);
+        /* if i-th bit is set, z := z * z and then reduce */
+        if (uc_nth_bit(y, i) == 1 )
+        {
+            if ( (res = uc_mul(z, z, &xt)) != UC_OK ||
+                 (res = uc_montgomery_reduce(z, m, rho)) != UC_OK )
+            {
+                goto cleanup;
+            }
         }
     }
 
     res = uc_montgomery_reduce(z, m, rho);
+
+cleanup:
+    uc_free(&xt);
 
     return res;
 }
