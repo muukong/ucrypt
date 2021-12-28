@@ -1,3 +1,5 @@
+#include <ctype.h>
+#include <string.h>
 #include <ucrypt/string_util.h>
 
 void reverse_string(char *s, int len)
@@ -26,4 +28,26 @@ void rsh_string(char *s, int nbytes, int shift, char c)
         s[i + shift] = s[i];
     for ( i = 0; i < shift; ++i )
         s[i] = c;
+}
+
+void remove_whitespace(char *s)
+{
+    char *it;
+
+    it = s;
+    do {
+        while ( isspace(*it) )
+            ++it;
+    } while ( *s++ = *it++ );
+}
+
+void remove_character(char *s, char c)
+{
+    char *it;
+
+    it = s;
+    do {
+        while ( *it == c )
+            ++it;
+    } while ( *s++ = *it++ );
 }

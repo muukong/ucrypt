@@ -5,4 +5,7 @@ void reverse_string(char *s, int len);
 
 void rsh_string(char *s, int nbytes, int shift, char c);
 
+void remove_whitespace(char *s);
+void remove_character(char *s, char c);
+
 #endif //UCRYPT_STRING_UTIL_H
