@@ -844,14 +844,12 @@ int uc_mul_digs(uc_int *z, uc_int *x, uc_int *y, int digits)
     if ( digits < UC_COMBA_ARRAY_LEN && UC_MIN(x->used, y->used) <= UC_COMBA_MUL_MAX_DIGS )
     {
         /* We can use faster Comba multiplication */
-        puts("Comba");
         if ( (res = _uc_mul_digs_comba(z, &xt, &yt, digits)) != UC_OK )
             goto cleanup;
     }
     else
     {
         /* Fallback to slow multiplication */
-        puts("Normal");
         if ( (res = _uc_mul_digs(z, &xt, &yt, digits)) != UC_OK )
             goto cleanup;
     }
