@@ -7,7 +7,7 @@ add_compile_options(-O3 -Wall -Wextra -pedantic)
 configure_file( include/uctest/testdata.h.in ${CMAKE_BINARY_DIR}/config/testdata.h )
 include_directories( ${CMAKE_BINARY_DIR}/config/ )
 
-add_executable(tests test.c testcase.c integer/mul.c)
+add_executable(tests test.c testcase.c integer/mul.c integer/div.c)
 target_include_directories(tests PUBLIC ./include)
 target_link_libraries(tests PRIVATE ucryptlib)
 add_test(NAME testlib COMMAND tests)

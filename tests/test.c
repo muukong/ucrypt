@@ -8,6 +8,7 @@ int tests_run = 0;
 static char *all_tests(void)
 {
     mu_run_test(test_mul);
+    mu_run_test(test_div);
     return 0;
 }
 

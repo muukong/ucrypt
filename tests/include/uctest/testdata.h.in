@@ -6,5 +6,6 @@
 #define UCRYPT_TESTDATA_H
 
 #define MUL_TEST_DATA "${CMAKE_CURRENT_SOURCE_DIR}/data/mul.csv"
+#define DIV_TEST_DATA "${CMAKE_CURRENT_SOURCE_DIR}/data/div.csv"
 
 #endif //UCRYPT_TESTDATA_H

@@ -16,6 +16,8 @@ char *test_mul()
     uc_csv_testcase t;
     uc_int x, y, z, z_;
 
+    puts("[*] Running multiplication tests...");
+
     res = uc_test_init(&t, MUL_TEST_DATA);
     mu_assert("[!] Multiplication: Could not read input file.", res != 0);
 
