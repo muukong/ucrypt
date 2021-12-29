@@ -7,5 +7,6 @@
 
 #define MUL_TEST_DATA "${CMAKE_CURRENT_SOURCE_DIR}/data/mul.csv"
 #define DIV_TEST_DATA "${CMAKE_CURRENT_SOURCE_DIR}/data/div.csv"
+#define EXPMOD_TEST_DATA "${CMAKE_CURRENT_SOURCE_DIR}/data/expmod.csv"
 
 #endif //UCRYPT_TESTDATA_H

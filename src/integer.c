@@ -2013,6 +2013,13 @@ int uc_exp_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
     if ( uc_gte(x, m) || uc_is_neg(y) )
         return UC_INPUT_ERR;
 
+    /* If y == 0, set z = 1.
+     *
+     * Note: We use the convention that 0^0 = 1
+     */
+    if ( uc_is_zero(y) )
+        return uc_set_i(z, 1);
+
     /* No real work required if y == 1 */
     if ( uc_is_one(y) )
         return uc_copy(z, x);

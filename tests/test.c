@@ -9,6 +9,7 @@ static char *all_tests(void)
 {
     mu_run_test(test_mul);
     mu_run_test(test_div);
+    mu_run_test(test_exp_mod);
     return 0;
 }
 

@@ -11,8 +11,13 @@ set(CMAKE_C_STANDARD 99)
 #    add_compile_options(-Wall -Wextra -pedantic)
 #endif()
 
+add_compile_options(-O3 -Wall -Wextra -pedantic)
+
 # Add library build target
 add_subdirectory(src)
+
+# Add debugging folder
+add_subdirectory(debug)
 
 # Add testing targets
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
