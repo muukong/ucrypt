@@ -2,6 +2,7 @@
 #define UCRYPT_INTTESTS_H
 
 char *test_mul();
+char *test_sqr();
 char *test_div();
 char *test_exp_mod();
 
