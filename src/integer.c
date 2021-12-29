@@ -1011,17 +1011,6 @@ int uc_mul_2(uc_int *x, uc_int *y)
     return uc_lshb(x, y, 1);
 }
 
-// TODO: add to header file
-int uc_exch (uc_int * a, uc_int * b)
-{
-    uc_int  t;
-
-    t  = *a;
-    *a = *b;
-    *b = t;
-    return UC_OK;
-}
-
 int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
 {
 #ifdef UC_SCHOOL_SMALL_DIV
