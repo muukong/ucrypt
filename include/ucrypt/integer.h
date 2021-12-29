@@ -153,7 +153,7 @@ int uc_mul_karatsuba(uc_int *z, uc_int *x, uc_int *y);
 int uc_mul_2(uc_int *x, uc_int *y);
 int uc_mul_d(uc_int *z, uc_int *x, uc_digit y);
 int uc_mul_multi(uc_int *x, uc_int *ys, int k);
-int uc_sqrd(uc_int *x, uc_int *y);
+int uc_sqr(uc_int *x, uc_int *y);
 int uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 int uc_div_school_small(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 int uc_div_school_fast(uc_int *q, uc_int *r, uc_int *x, uc_int *y);

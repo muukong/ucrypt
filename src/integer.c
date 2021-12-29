@@ -15,8 +15,8 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_sub(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_mul_digs(uc_int *z, uc_int *x, uc_int *y, int digits);
 static int _uc_mul_karatsuba(uc_int *C, uc_int *A, uc_int *B, int N);
-static int _uc_sqrd_slow(uc_int *x, uc_int *y); // TODO: move to .c file
-static int _uc_sqrd_comba(uc_int *x, uc_int *y); // TODO: move to .c file
+static int _uc_sqr_slow(uc_int *x, uc_int *y);
+static int _uc_sqr_comba(uc_int *x, uc_int *y);
 static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 static int _uc_exp_mod_slow(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
 static int _uc_exp_mod_mont(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
@@ -1000,15 +1000,15 @@ cleanup:
 /*
  * Computes x = y^2
  */
-int uc_sqrd(uc_int *x, uc_int *y)
+int uc_sqr(uc_int *x, uc_int *y)
 {
     if ( 2 * y->used < UC_COMBA_MUL_MAX_DIGS && 2 * y->used < UC_COMBA_ARRAY_LEN )
-        return _uc_sqrd_comba(x, y);
+        return _uc_sqr_comba(x, y);
     else
-        return _uc_sqrd_slow(x, y);
+        return _uc_sqr_slow(x, y);
 }
 
-static int _uc_sqrd_slow(uc_int *x, uc_int *y)
+static int _uc_sqr_slow(uc_int *x, uc_int *y)
 {
     int i, j, res;
     uc_int xt;
@@ -1073,7 +1073,7 @@ static int _uc_sqrd_slow(uc_int *x, uc_int *y)
  *    --------------------------------------------------------
  *     6      5      4      3      2      1     0     | column index
  */
-static int _uc_sqrd_comba(uc_int *x, uc_int *y)
+static int _uc_sqr_comba(uc_int *x, uc_int *y)
 {
     int res;
     int i, j, i_max, j_max;
@@ -1584,7 +1584,7 @@ int uc_exp(uc_int *z, uc_int *x, uc_int *y)
     for ( i = n - 1; i >= 0; --i )
     {
         /* z = z * z */
-        if ( (res = uc_sqrd(&tmp, z)) != UC_OK ||
+        if ((res = uc_sqr(&tmp, z)) != UC_OK ||
              (res = uc_copy(z, &tmp)) != UC_OK )
         {
             goto cleanup;
@@ -2181,7 +2181,7 @@ int _uc_exp_mod_slow(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
     for ( i = n - 1; i >= 0; --i )
     {
         /* z = z * z */
-        if ( (res = uc_sqrd(z, z)) != UC_OK ||
+        if ((res = uc_sqr(z, z)) != UC_OK ||
              (res = uc_mod(z, z, m)) != UC_OK )
         {
             goto cleanup;
@@ -2271,7 +2271,7 @@ int _uc_exp_mod_mont(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
     for (i = nbits - 2; i >= 0; --i)
     {
         /* z := z * z and then reduce */
-        if ( (res = uc_sqrd(z, z)) != UC_OK ||
+        if ((res = uc_sqr(z, z)) != UC_OK ||
              (res = uc_montgomery_reduce(z, m, rho)) != UC_OK )
         {
             goto cleanup;
