@@ -15,6 +15,8 @@ static int _uc_add(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_sub(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_mul_digs(uc_int *z, uc_int *x, uc_int *y, int digits);
 static int _uc_mul_karatsuba(uc_int *C, uc_int *A, uc_int *B, int N);
+static int _uc_sqrd_slow(uc_int *x, uc_int *y); // TODO: move to .c file
+static int _uc_sqrd_comba(uc_int *x, uc_int *y); // TODO: move to .c file
 static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 static int _uc_exp_mod_slow(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
 static int _uc_exp_mod_mont(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
@@ -1000,7 +1002,122 @@ cleanup:
  */
 int uc_sqrd(uc_int *x, uc_int *y)
 {
-    return uc_mul(x, y, y); // TODO: Implement more efficient algorithm
+    if ( 2 * y->used < UC_COMBA_MUL_MAX_DIGS && 2 * y->used < UC_COMBA_ARRAY_LEN )
+        return _uc_sqrd_comba(x, y);
+    else
+        return _uc_sqrd_slow(x, y);
+}
+
+static int _uc_sqrd_slow(uc_int *x, uc_int *y)
+{
+    int i, j, res;
+    uc_int xt;
+    uc_digit u;
+    uc_word r;
+
+    res = UC_OK;
+
+    uc_init(&xt);
+
+    uc_grow(&xt, 2 * y->used + 1);
+    xt.used = 2 * y->used + 1;
+
+    for ( i = 0; i < y->used; ++i )
+    {
+        /* Calculate square */
+        r = (uc_word) xt.digits[2 * i] + (uc_word) y->digits[i] * (uc_word) y->digits[i];
+        xt.digits[2*i] = r & (uc_word) UC_DIGIT_MASK;
+
+        u = r / UC_INT_BASE;
+
+        /* Calculate "double" products */
+        for ( j = i + 1; j < y->used; ++j )
+        {
+            r = 2 * (uc_word) y->digits[i] * (uc_word) y->digits[j] +
+                (uc_word) xt.digits[i+j] +
+                (uc_word) u;
+            xt.digits[i+j] = r & (uc_word) UC_DIGIT_MASK;
+            u = r >> (uc_word) UC_DIGIT_BITS;
+        }
+
+        /* Propagate carry */
+        for ( ; u > 0; ++j )
+        {
+            r = (uc_word) xt.digits[i+j] + (uc_word) u;
+            xt.digits[i+j] = r & (uc_word) UC_DIGIT_MASK;
+            u = r >> (uc_word) UC_DIGIT_BITS;
+        }
+    }
+
+    uc_clamp(&xt);
+    if ( (res = uc_copy(x, &xt)) != UC_OK )
+        return res;
+
+    uc_free(&xt);
+
+    return res;
+}
+
+/*
+ *  Calculate x = y^2 using fast comba method.
+ *
+ *  The following table should help visualize the algorithm used:
+ *
+ *                          1      2      3      4
+ *    x                     1      2      3      4
+ *    ------------------------------------------------
+ *    xxx    xxx    xxx    4*1    4*2    4*3    4*4   | row 0
+ *    xxx    xxx    3*1    3*2    3*3    3*4     0    | row 1
+ *    xxx    2*1    2*2    2*3    2*4     0      0    | row 2
+ *    1*1    1*2    1*3    1*4     0      0      0    | row 3
+ *    --------------------------------------------------------
+ *     6      5      4      3      2      1     0     | column index
+ */
+static int _uc_sqrd_comba(uc_int *x, uc_int *y)
+{
+    int res;
+    int i, j, i_max, j_max;
+    int tx, ty;
+    uc_digit w_comba[UC_COMBA_ARRAY_LEN];   /* comba array */
+    uc_word w_acc;                          /* comba accumulator */
+    uc_word w_carry;                        /* comba carry variable */
+
+    i_max = 2 * y->used;
+
+    if ( i_max >= UC_COMBA_ARRAY_LEN || i_max > UC_COMBA_MUL_MAX_DIGS )
+        return UC_INPUT_ERR;
+
+    w_carry = 0;
+    for ( i = 0; i < i_max; ++i ) /* iterate column by column */
+    {
+        w_acc = 0;
+
+        ty = UC_MIN(y->used - 1, i);                /* index into left-hand side of inner multiplication */
+        tx = i - ty;                                   /* index into right-hand side of inner multiplication */
+
+        j_max = UC_MIN(y->used - tx, ty + 1);
+        j_max = UC_MIN(j_max, (ty - tx + 1) / 2 );
+        for ( j = 0; j < j_max; ++j )
+            w_acc += (uc_word) y->digits[tx+j] * (uc_word) y->digits[ty-j];
+
+        /* double accumulator and add carry */
+        w_acc = 2 * w_acc + w_carry;
+
+        /* squared numbers are only found in even-numbered columns (see example above) */
+        if ( i % 2 == 0 )
+            w_acc += (uc_word) y->digits[i/2] * (uc_word) y->digits[i/2];
+
+        w_comba[i] = w_acc & UC_DIGIT_MASK;     /* w_comba[i] = w_acc % BASE */
+        w_carry = w_acc >> UC_DIGIT_BITS;       /* w_carry = w_acc / BASE */
+    }
+
+    /* copy comba array to result x */
+    if ( (res = uc_set_zero(x)) != UC_OK )      return res;
+    if ( (res = uc_grow(x, i_max)) != UC_OK )   return res;
+    for ( i = 0; i < i_max; ++i )
+        x->digits[i] = w_comba[i];
+    x->used = x->alloc;
+    return uc_clamp(x);
 }
 
 /*
@@ -2064,8 +2181,8 @@ int _uc_exp_mod_slow(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
     for ( i = n - 1; i >= 0; --i )
     {
         /* z = z * z */
-        if ( (res = uc_mul_mod(&tmp, z, z, m)) != UC_OK ||
-             (res = uc_copy(z, &tmp)) != UC_OK )
+        if ( (res = uc_sqrd(z, z)) != UC_OK ||
+             (res = uc_mod(z, z, m)) != UC_OK )
         {
             goto cleanup;
         }
@@ -2154,7 +2271,7 @@ int _uc_exp_mod_mont(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
     for (i = nbits - 2; i >= 0; --i)
     {
         /* z := z * z and then reduce */
-        if ( (res = uc_mul(z, z, z)) != UC_OK ||
+        if ( (res = uc_sqrd(z, z)) != UC_OK ||
              (res = uc_montgomery_reduce(z, m, rho)) != UC_OK )
         {
             goto cleanup;
