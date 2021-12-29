@@ -16,6 +16,8 @@ static int _uc_sub(uc_int *z, uc_int *x, uc_int *y);
 static int _uc_mul_digs(uc_int *z, uc_int *x, uc_int *y, int digits);
 static int _uc_mul_karatsuba(uc_int *C, uc_int *A, uc_int *B, int N);
 static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
+static int _uc_exp_mod_slow(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
+static int _uc_exp_mod_mont(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
 
 static uc_word _uc_gcd_word(uc_word x, uc_word y);
 
@@ -1997,11 +1999,34 @@ cleanup:
 }
 
 /*
- * Compute z = x ^ y (mod m) for 0 <= x, y < m
+ * Compute z = x ^ y (mod m) for 0 <= x < m and y >= 0
  *
  * // TODO: Add input validation
  */
 int uc_exp_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
+{
+    /*
+     * Make sure that:
+     * 1) x < m
+     * 2) y >= 0
+     */
+    if ( uc_gte(x, m) || uc_is_neg(y) )
+        return UC_INPUT_ERR;
+
+    /* No real work required if y == 1 */
+    if ( uc_is_one(y) )
+        return uc_copy(z, x);
+
+    if ( uc_is_odd(m) )
+        return _uc_exp_mod_mont(z, x, y, m); /* use fast Montgomery exponentiation is m is odd */
+    else
+        return _uc_exp_mod_slow(z, x, y, m);
+}
+
+/*
+ * Basic (slow) square and multiply algorithm to compute z = x ^ y (mod m) for 0 <= x < m and y >= 0.
+ */
+int _uc_exp_mod_slow(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
 {
     uc_int xt, yt, tmp;
     int i, n, res;
@@ -2072,14 +2097,17 @@ int uc_exp_mod(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
     else
         z->sign = UC_POS;
 
-    cleanup:
+cleanup:
     uc_free_multi(&xt, &yt, &tmp, 0, 0, 0);
 
     return res;
 }
 
-
-int uc_exp_mod_mont(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
+/*
+ * Montgomery square and multiply algorithm to compute z = x ^ y (mod m)
+ * for 0 <= x < m, y >= 0 and m odd.
+ */
+int _uc_exp_mod_mont(uc_int *z, uc_int *x, uc_int *y, uc_int *m)
 {
     int i, res, nbits;
     uc_digit rho;
