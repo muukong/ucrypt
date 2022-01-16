@@ -5,6 +5,30 @@
 #include <ucrypt/rand.h>
 
 /*
+ * Returns the number of Miller-Rabin trials for an n-bit number primality check with an error rate
+ * of less than 2^{-80}. (See "Average case error estimates for the strong probable prime test by
+ * Damgard et. al., and Handbook of Applied Cryptography).
+ *
+ * Warning: These trial counts are _not_ safe for testing attacker-provided prime candidates (see "Prime
+ * and Prejudice: Primality Testing Under Adversarial Conditions").
+ */
+int miller_rabin_rounds_unsafe(int n)
+{
+    if ( n >= 1300 )    return 2;
+    if ( n >= 850)      return 3;
+    if ( n >= 650 )     return 4;
+    if ( n >= 550 )     return 5;
+    if ( n >= 450 )     return 6;
+    if ( n >= 400 )     return 7;
+    if ( n >= 350 )     return 8;
+    if ( n >= 300 )     return 9;
+    if ( n >= 250 )     return 12;
+    if ( n >= 200)      return 15;
+    if ( n >= 150 )     return 18;
+    return 60;
+}
+
+/*
  * Small list of prime numbers for trial division. This list was chosen for two reasons:
  * - Approximately 75% of primes can be filtered out, which is good enough (we cannot really go beyond ~80% anyways)
  * - The largest prime in the list (127) fits in a UC digit. We can use this for fast division by a digit
@@ -13,11 +37,14 @@ static int TRIAL_PRIMES_COUNT = 31;
 static uc_digit TRIAL_PRIMES[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53,
                                   59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127 };
 
-
-int uc_is_prime(uc_int *x, int *is_prime)
+int uc_is_prime(uc_int *x, int *is_prime, int safe)
 {
     int res;
+    int t;      /* number of Miller-Rabin trials */
 
+    res = UC_OK;
+
+    /* Init with safe default value */
     *is_prime = UC_FALSE;
 
     if ( (res = uc_is_prime_trial_division(x, is_prime)) != UC_OK )
@@ -28,7 +55,15 @@ int uc_is_prime(uc_int *x, int *is_prime)
         return res;
 
     /* Use slow but more precise Miller-Rabin test */
-    return uc_is_prime_miller_rabin(x, is_prime, 40);
+    if ( safe == UC_TRUE )
+        t = 60;
+    else
+        t = miller_rabin_rounds_unsafe(uc_count_bits(x));
+
+    if ( (res = uc_is_prime_miller_rabin(x, is_prime, t)) != UC_OK )
+        return res;
+
+    return res;
 }
 
 int uc_is_prime_trial_division(uc_int *x, int *is_prime)
@@ -67,72 +102,63 @@ cleanup:
 
 int uc_is_prime_miller_rabin(uc_int *n, int *is_prime, int t)
 {
-    int i, j, s, res;
-    uc_int a, r, tmp, n1;
+    int i, j;
+    uc_int n1, d;
+    uc_int a;
+    uc_int tmp;
+    uc_int x;
+    int r;
 
-    res = UC_OK;
+    *is_prime = UC_FALSE;
 
-    if ((res = uc_init_multi(&a, &r, &tmp, &n1, 0, 0)) != UC_OK )
-        return res;
+    uc_init_multi(&n1, &d, &a, &tmp, &x, 0);
 
     /* n1 = n - 1 */
-    if ( (res = uc_sub_d(&n1, n, 1)) != UC_OK )
-        goto cleanup;
+    uc_copy(&n1, n);
+    uc_sub_d(&n1, &n1, 1);
 
     /*
-     * Compute r and s such that n - 1 = 2^s * r
+     * Write n - 1 as 2^r * d
      */
-    uc_copy(&r, n);
-    uc_sub_d(&r, &r, 1);
-    s = 0;
-    while ( uc_is_even(&r) )
+    r = 0;
+    uc_copy(&d, &n1);
+    while ( uc_is_even(&d) )
     {
-        uc_div_2(&r, &r);
-        ++s;
+        ++r;
+        uc_rshb(&d, &d, 1);
     }
+
+    /* a = 2 */
+    uc_set_i(&tmp, 2);
 
     /* Run t tests */
     for ( i = 0; i < t; ++i )
     {
-        /* Sample a in [2,n-1) */
-        if ( (res = uc_set_i(&tmp, 2)) != UC_OK ||
-             (res = uc_rand_int_range(&a, &tmp, &n1)) != UC_OK )
-        {
-            goto cleanup;
-        }
+loop:
+        /* Sample a from [2, n-1) */
+        uc_rand_int_range(&a, &tmp, &n1);
 
-        /* a = a^r mod n */
-        if ( (res = uc_exp_mod(&a, &a, &r, n)) != UC_OK )
-            goto cleanup;
+        uc_exp_mod(&x, &a, &d, n);
 
-        if ( uc_is_one(&a) || uc_eq(&a, &n1) )
+        if ( uc_is_one(&x) || uc_eq(&x, &n1) )
             continue;
 
-        j = 1;
-        while ( j <= s - 1 && !uc_eq(&a, &n1) )
+        for ( j = 0; j < r; ++j )
         {
-            if ( (res = uc_mul_mod(&a, &a, &a, n)) != UC_OK )
-                goto cleanup;
+            uc_sqr(&x, &x);
+            uc_mod(&x, &x, n);
 
-            if ( uc_is_one(&a) )
-            {
-                *is_prime = UC_FALSE;
-                goto cleanup;
-            }
-
-            ++j;
+            if ( uc_eq(&x, &n1) )
+                goto loop;
         }
 
-        if ( !uc_eq(&a, &n1) )
-        {
-            *is_prime = UC_FALSE;
-            goto cleanup;
-        }
+        *is_prime = UC_FALSE;
+        goto cleanup;
     }
+
     *is_prime = UC_TRUE;
 
 cleanup:
-    uc_free_multi(&a, &r, &tmp, &n1, 0, 0);
-
-    return res;
+    uc_free_multi(&n1, &d, &a, &tmp, &x, 0);
+    return UC_OK;
 }
