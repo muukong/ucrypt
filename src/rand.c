@@ -232,11 +232,18 @@ int uc_gen_rand_prime(uc_int *x, uc_int *a, uc_int *b)
 
     do
     {
-        if ( (res = uc_rand_int_range(x, a, b)) != UC_OK ||
-             (res = uc_is_prime(x, &is_prime)) != UC_OK )
-        {
+
+        /* Sample random integer */
+        if ( (res = uc_rand_int_range(x, a, b)) != UC_OK )
             return res;
-        }
+
+        /* Add 1 if x is even */
+        if ( uc_is_even(x) )
+            if ( (res = uc_add_d(x, x, 1)) != UC_OK )  return res;
+
+        /* Check if x is prime */
+        if ( (res = uc_is_prime(x, &is_prime, UC_FALSE)) != UC_OK )
+            return res;
 
     } while ( is_prime == UC_FALSE );
 
