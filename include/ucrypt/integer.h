@@ -165,7 +165,6 @@ int uc_exp_i(uc_int *z, uc_int *x, int y);
 int uc_montgomery_setup(uc_int *x, uc_digit *rho);
 int uc_montgomery_reduce(uc_int *x, uc_int *n, uc_digit rho);
 
-
 int uc_lshb(uc_int *x, uc_int *y, int n);
 int uc_rshb(uc_int *x, uc_int *y, int n);
 int uc_lshd(uc_int *x, uc_int *y, int n);

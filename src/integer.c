@@ -20,6 +20,7 @@ static int _uc_sqr_comba(uc_int *x, uc_int *y);
 static int _uc_div(uc_int *q, uc_int *r, uc_int *x, uc_int *y);
 static int _uc_exp_mod_slow(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
 static int _uc_exp_mod_mont(uc_int *z, uc_int *x, uc_int *y, uc_int *m);
+static int _uc_montgomery_reduce_comba(uc_int *x, uc_int *n, uc_digit rho);
 
 static uc_word _uc_gcd_word(uc_word x, uc_word y);
 
@@ -1663,6 +1664,10 @@ int uc_montgomery_reduce(uc_int *x, uc_int *n, uc_digit rho)
     digs = 2 * n->used + 1;
     k = n->used;
 
+    /* Use faster Comba-based Montgomery reduction if we can */
+    if ( digs < UC_COMBA_ARRAY_LEN && k < UC_COMBA_MUL_MAX_DIGS )
+        return _uc_montgomery_reduce_comba(x, n, rho);
+
     /* Make sure x can hold result */
     if ((res = uc_grow(x, digs)) != UC_OK)
         return res;
@@ -1702,6 +1707,64 @@ int uc_montgomery_reduce(uc_int *x, uc_int *n, uc_digit rho)
     }
 
     return res;
+}
+
+int _uc_montgomery_reduce_comba(uc_int *x, uc_int *n, uc_digit rho)
+{
+    int i, j;
+    uc_word ws[UC_COMBA_ARRAY_LEN];
+    uc_word tmp;
+
+    assert( x->used < UC_COMBA_ARRAY_LEN );
+
+    /* Make sure x can hold result */
+    if ( x->alloc < n->used + 1 )
+        uc_grow(x, n->used + 1);
+
+    /* Initialize Comba array */
+
+    for ( i = 0; i < x->used; ++i )
+        ws[i] = x->digits[i];
+
+    for ( ; i < 2 * n->used + 1; ++i )
+        ws[i] = 0;
+
+    /* Eliminate lower k digits */
+    for ( i = 0; i < n->used; ++i )
+    {
+        tmp = ws[i] * (uc_word)rho % UC_INT_BASE; /* mu */
+        for ( j = 0; j < n->used; ++j )
+        {
+            ws[i+j] += tmp * (uc_word)n->digits[j];
+        }
+        ws[i+1] += ws[i] / UC_INT_BASE;
+    }
+
+    /* Propagate carries */
+    for ( i = n->used; i < 2 * n->used + 1; ++i )
+    {
+        ws[i+1] += ws[i] / UC_INT_BASE;
+    }
+
+    /* Shift right and reduce modulo integer base as we go along */
+    for ( i = 0; i < n->used + 1; ++i )
+    {
+        x->digits[i] = ws[i + n->used] % UC_INT_BASE;
+    }
+
+    /* zero out unused digits of x */
+    for ( i = n->used + 1; i < x->used; ++i )
+        x->digits[i] = 0;
+
+    x->used = n->used + 1;
+    uc_clamp(x);
+
+    if ( uc_gte_mag(x, n) )
+    {
+        uc_sub(x, x, n);
+    }
+
+    return UC_OK;
 }
 
 /*
