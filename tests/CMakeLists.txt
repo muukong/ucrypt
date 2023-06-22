@@ -11,5 +11,5 @@ include_directories( ${CMAKE_BINARY_DIR}/config/ )
 
 add_executable(tests test.c testcase.c integer/mul.c integer/div.c integer/expmod.c integer/sqr.c)
 target_include_directories(tests PUBLIC ./include)
-target_link_libraries(tests PRIVATE ucryptlib)
+target_link_libraries(tests PRIVATE ucrypt)
 add_test(NAME testlib COMMAND tests)
