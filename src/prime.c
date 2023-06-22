@@ -70,9 +70,12 @@ int uc_is_prime_trial_division(uc_int *x, int *is_prime)
 {
     int i, res;
     uc_digit r;
-    uc_int q;
+    uc_int q, tmp;
 
     res = UC_OK;
+    *is_prime = UC_FALSE;
+    if ( uc_init_multi(&q, &tmp, NULL, NULL, NULL, NULL) != UC_OK )
+        return res;
 
     if ( uc_is_even(x) || !uc_is_pos(x) || uc_is_one(x) )
     {
@@ -86,6 +89,15 @@ int uc_is_prime_trial_division(uc_int *x, int *is_prime)
     *is_prime = UC_TRUE;
     for ( i = 0; i < TRIAL_PRIMES_COUNT; ++i )
     {
+        if ( uc_init_d(&tmp, TRIAL_PRIMES[i]) != UC_OK )
+            return res;
+
+        if ( uc_eq(x, &tmp) )
+        {
+            *is_prime = UC_TRUE;
+            goto cleanup;
+        }
+
         uc_div_d(&q, &r, x, TRIAL_PRIMES[i]);
         if ( r == 0 )
         {
@@ -96,6 +108,7 @@ int uc_is_prime_trial_division(uc_int *x, int *is_prime)
 
 cleanup:
     uc_free(&q);
+    uc_free(&tmp);
 
     return res;
 }
