@@ -1229,7 +1229,7 @@ int uc_div_school_fast(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
     if ( uc_is_zero(y) )
         return UC_INPUT_ERR;
 
-    /* If x = y, q = 1 and r = 0 */
+    /* If x = y, then set q = 1 and r = 0 and we are done */
     if ( uc_eq(x, y) )
     {
         if ( (res = uc_set_i(q, 1)) != UC_OK )
@@ -1237,7 +1237,7 @@ int uc_div_school_fast(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
         return uc_set_zero(r);
     }
 
-    /* If x < y, set q = 0 and r = x */
+    /* If x < y, then set q = 0 and r = x and we are done */
     if ( uc_lt(x, y) )
     {
         if ( (res = uc_set_zero(q)) != UC_OK ||
@@ -1245,6 +1245,8 @@ int uc_div_school_fast(uc_int *q, uc_int *r, uc_int *x, uc_int *y)
         {
             return res;
         }
+
+        return res;
     }
 
     /* Initialize local variables */
