@@ -2,6 +2,7 @@ import random
 import sys
 
 
+# x = q * y + r
 def out(x, y, q, r):
     print('%s,%s,%s,%s' % (hex(x)[2:], hex(y)[2:], hex(q)[2:], hex(r)[2:]))
 
