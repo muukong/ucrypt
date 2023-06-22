@@ -162,7 +162,7 @@ loop:
             uc_mod(&x, &x, n);
 
             if ( uc_eq(&x, &n1) )
-                goto loop;
+                goto loop; // TODO: Should we increment i at this point?
         }
 
         *is_prime = UC_FALSE;
