@@ -56,7 +56,7 @@ struct sha256_testcase {
         }
 };
 
-int is_equal(uint8_t *digest_baseline, uint8_t *digest)
+static int is_equal(uint8_t *digest_baseline, uint8_t *digest)
 {
     int i, equal;
 
@@ -73,7 +73,7 @@ int is_equal(uint8_t *digest_baseline, uint8_t *digest)
     return equal;
 }
 
-void print_digest(uint8_t *digest)
+static void print_digest(uint8_t *digest)
 {
     int i;
 
@@ -90,8 +90,7 @@ char *test_sha256()
     uint8_t *tc_input;
     uint8_t tc_digest[UC_SHA256_DIGEST_SIZE];
 
-    puts("");
-    puts("Running SHA-256 testcases...");
+    puts("[*] Running SHA-256 testcases...");
 
     for ( i = 0; i < NOF_TESTCASES; ++i )
     {

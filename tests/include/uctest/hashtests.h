@@ -7,4 +7,6 @@
 
 char *test_sha256();
 
+char *test_hmac();
+
 #endif //UCRYPT_HASHTESTS_H
