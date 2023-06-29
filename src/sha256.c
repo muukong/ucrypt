@@ -1,6 +1,4 @@
-#include <assert.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <ucrypt/sha.h>
 
 #define SHR(n, x) ((x) >> (n))
@@ -83,11 +81,6 @@ int uc_sha256_update(uc_sha_256_ctx_t *ctx, uint8_t *message, uint64_t nbytes)
 {
     uint64_t i;
 
-//    puts("Invoked sha256 update");
-//    for ( i = 0; i < nbytes; ++i )
-//        printf("%02x", message[i]);
-//    puts("");
-
     if ( !nbytes )
         return UC_OK;
 
@@ -99,16 +92,12 @@ int uc_sha256_update(uc_sha_256_ctx_t *ctx, uint8_t *message, uint64_t nbytes)
 
     ctx->message_length += 8 * nbytes;
 
-//    printf("foo nbytes = %d\n", nbytes);
     for ( i = 0; i < nbytes; ++i )
     {
         ctx->block[ctx->block_index++] = *message;
 
         if (ctx->block_index == UC_SHA256_MESSAGE_BLOCK_SIZE )
-        {
-//            printf("i = %d\n", i);
             _uc_sha256_transform_block(ctx);
-        }
 
         ++message;
     }

@@ -1,14 +1,4 @@
 #include <ucrypt/sha.h>
-#include <stdio.h>
-
-void print_in_hex(uint8_t *data, uint64_t size)
-{
-    uint64_t i;
-
-    for ( i = 0; i < size; ++i )
-        printf("%02x", data[i]);
-    puts("");
-}
 
 int uc_sha_hmac_init(uc_sha_hmac_ctx_t *ctx, uc_sha_version_t sha_version, uint8_t *key, int key_len)
 {
