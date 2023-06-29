@@ -57,7 +57,7 @@ typedef struct
 {
     uc_digit *digits;   // array of digits in big endian
     int used;           // number of digits that are currently used
-    int alloc;          // number of digits that are allocated (i.e., length of _digits_)
+    int alloc;          // number of digits that are allocated (i.e., message_length of _digits_)
     int sign;           // UC_NEG or UC_POS
 } uc_int;
 

@@ -2845,7 +2845,7 @@ cleanup2:
  */
 
 /*
- * Reads an arbitrary-length string in little-endian radix-r representation
+ * Reads an arbitrary-message_length string in little-endian radix-r representation
  * (2 <= r <= 16) and converts it to a string. the input sting can be prepended
  * with a '+' or '-' sign.
  *
@@ -2921,7 +2921,7 @@ int uc_read_radix(uc_int *x, const char *y, int radix)
  * Converts x into a little-endian radix-r string representation. Negative numbers start
  * with a '-' character and the string is null-terminated.
  *
- * The required string length n (which includes the null-byte) can be computed with
+ * The required string message_length n (which includes the null-byte) can be computed with
  * the helper function uc_write_radix_len(..).
  */
 int uc_write_radix(char *s, uc_int *x, int radix)
@@ -3001,7 +3001,7 @@ cleanup:
 }
 
 /*
- * Returns the string length required (including null-byte)
+ * Returns the string message_length required (including null-byte)
  * to hold the string representation of x in radix r representation.
  */
 int uc_write_radix_len(uc_int *x, int r)
@@ -3030,7 +3030,7 @@ int uc_write_radix_len(uc_int *x, int r)
         uc_copy(&tmp, &tmp2);
     }
     ++len; /* Since tmp starts at r, the algorithm above can underestimate the required
-            * length by 1 digit. */
+            * message_length by 1 digit. */
 
     uc_free(&rt);
     uc_free(&tmp);
@@ -3040,7 +3040,7 @@ int uc_write_radix_len(uc_int *x, int r)
 }
 
 /*
- * Convert byte-encoded integer _bytes_ (big-endian) of length _nbytes_ to integer
+ * Convert byte-encoded integer _bytes_ (big-endian) of message_length _nbytes_ to integer
  */
 int uc_read_bytes(uc_int *x, unsigned char *bytes, int nbytes)
 {
