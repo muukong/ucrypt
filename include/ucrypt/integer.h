@@ -2,6 +2,7 @@
 #define UCRYPT_INTEGER_H
 
 #include <stdint.h>
+#include <ucrypt/ucdef.h>
 
 /*
  * Each limb of a number has room for UC_DIGIT_BITS bits. The following must hold true:
@@ -74,13 +75,6 @@ typedef struct
 #define UC_INT_BASE     (((uc_word) 1) << UC_DIGIT_BITS)
 #define UC_DIGIT_MASK ((uc_digit) ~((~((uc_digit) 0)) << UC_DIGIT_BITS))
 
-#define UC_OK               1       // Indicates that operation was successful
-#define UC_INPUT_ERR        -1      // Indicates that operation was not successful
-#define UC_MEM_ERR          -2      // Insufficient memory
-#define UC_RNG_ERR          -3      // Random number generation error
-
-#define UC_TRUE     1
-#define UC_FALSE    0
 
 /*
  * Basic operations
