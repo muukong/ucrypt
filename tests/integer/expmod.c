@@ -49,7 +49,7 @@ char *test_exp_mod()
         end = clock();
 
         elapsed = (double)(end - begin) / CLOCKS_PER_SEC;
-        printf("\t\t... %lf ms\n", 1000 * elapsed);
+//        printf("\t\t... %lf ms\n", 1000 * elapsed);
 
         if ( !uc_eq(&z, &z_) )
         {
