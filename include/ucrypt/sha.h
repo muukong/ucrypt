@@ -21,6 +21,9 @@
 #define UC_SHA512_MESSAGE_BLOCK_SIZE 128
 #define UC_SHA512_MESSAGE_SCHEDULE_SIZE 80
 
+#define UC_SHA384_DIGEST_SIZE 48
+#define UC_SHA384_MESSAGE_BLOCK_SIZE UC_SHA512_MESSAGE_BLOCK_SIZE
+
 #define UC_SHA_MAX_MESSAGE_BLOCK_SIZE UC_SHA512_MESSAGE_BLOCK_SIZE
 
 #define UC_SHA_OK            1
@@ -97,6 +100,20 @@ int uc_sha512_update(uc_sha_512_ctx_t *ctx, uint8_t *message, uint32_t nbytes);
 int uc_sha512_finalize(uc_sha_512_ctx_t *ctx);
 int uc_sha512_finalize_with_bits(uc_sha_512_ctx_t *ctx, uint8_t data, uint64_t nbits);
 int uc_sha512_output(uc_sha_512_ctx_t *ctx, uint8_t *result);
+
+/*
+ * SHA-384
+ */
+
+/* The SHA-512 structure is used for calculating SHA-384 */
+typedef uc_sha_512_ctx_t uc_sha_384_ctx_t;
+
+int uc_sha384_init(uc_sha_384_ctx_t *ctx);
+int uc_sha384_reset(uc_sha_384_ctx_t *ctx);
+int uc_sha384_update(uc_sha_384_ctx_t *ctx, uint8_t *message, uint64_t nbytes);
+int uc_sha384_finalize(uc_sha_384_ctx_t *ctx);
+int uc_sha384_finalize_with_bits(uc_sha_384_ctx_t *ctx, uint8_t data, uint64_t nbits);
+int uc_sha384_output(uc_sha_384_ctx_t *ctx, uint8_t *result);
 
 /*
  * Generic SHA
