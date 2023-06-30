@@ -9,6 +9,8 @@
 #include <ucrypt/ucdef.h>
 #include <ucrypt/integer.h>
 
+#define UC_SHA1_DIGEST_SIZE 20  /* SHA-1 hash size in bytes */
+#define UC_SHA1_MESSAGE_BLOCK_SIZE 64
 
 #define UC_SHA256_DIGEST_SIZE 32           /* SHA-256 hash size in bytes */
 #define UC_SHA256_MESSAGE_BLOCK_SIZE 64
@@ -19,7 +21,7 @@
 
 #define UC_SHA512_DIGEST_SIZE 64
 #define UC_SHA512_MESSAGE_BLOCK_SIZE 128
-#define UC_SHA512_MESSAGE_SCHEDULE_SIZE 80
+//#define UC_SHA512_MESSAGE_SCHEDULE_SIZE 80
 
 #define UC_SHA384_DIGEST_SIZE 48
 #define UC_SHA384_MESSAGE_BLOCK_SIZE UC_SHA512_MESSAGE_BLOCK_SIZE
@@ -31,6 +33,29 @@
 #define UC_SHA_STATE_ERROR  -2
 #define UC_SHA_NULL_ERROR   -3
 
+/*
+ * SHA-1
+ */
+
+typedef struct uc_sha_1_ctx_t
+{
+    uint32_t H[UC_SHA1_DIGEST_SIZE / 4];         /* intermediate hash value */
+
+    uint8_t block[UC_SHA256_MESSAGE_BLOCK_SIZE];   /* current message block */
+    uint32_t block_index;                          /* index into message block where to write next */
+
+    uint64_t message_length;                       /* total message length in bits */
+
+    int computed;
+    int corrupted;
+} uc_sha_1_ctx_t;
+
+int uc_sha1_init(uc_sha_1_ctx_t *ctx);
+int uc_sha1_reset(uc_sha_1_ctx_t *ctx);
+int uc_sha1_update(uc_sha_1_ctx_t *ctx, uint8_t *message, uint64_t nbytes);
+int uc_sha1_finalize(uc_sha_1_ctx_t *ctx);
+int uc_sha1_finalize_with_bits(uc_sha_1_ctx_t *ctx, uint8_t data, uint64_t nbits);
+int uc_sha1_output(uc_sha_1_ctx_t *ctx, uint8_t *result);
 
 /*
  * SHA-256
