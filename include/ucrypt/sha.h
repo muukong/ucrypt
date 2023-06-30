@@ -140,6 +140,7 @@ int uc_sha384_output(uc_sha_384_ctx_t *ctx, uint8_t *result);
 
 typedef enum uc_sha_version_t
 {
+    UC_SHA1,
     UC_SHA224,
     UC_SHA256,
     UC_SHA384,
@@ -150,6 +151,7 @@ typedef struct uc_sha_ctx_t
 {
     uc_sha_version_t sha_version;
     union {
+        uc_sha_1_ctx_t sha1_ctx;
         uc_sha_224_ctx_t sha224_ctx;
         uc_sha_256_ctx_t sha256_ctx;
         uc_sha_384_ctx_t sha384_ctx;
