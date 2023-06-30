@@ -11,8 +11,10 @@
 
 
 #define UC_SHA256_DIGEST_SIZE 32           /* SHA-256 hash size in bytes */
+#define UC_SHA224_DIGEST_SIZE 28           /* SHA-224 hash size in bytes */
 #define UC_SHA256_MESSAGE_BLOCK_SIZE 64
 #define UC_SHA256_MESSAGE_SCHEDULE_SIZE 64
+
 
 #define UC_SHA_MAX_MESSAGE_BLOCK_SIZE UC_SHA256_MESSAGE_BLOCK_SIZE
 
@@ -51,6 +53,21 @@ int uc_sha256_update(uc_sha_256_ctx_t *ctx, uint8_t *message, uint64_t nbytes);
 int uc_sha256_finalize(uc_sha_256_ctx_t *ctx);
 int uc_sha256_finalize_with_bits(uc_sha_256_ctx_t *ctx, uint8_t data, uint64_t nbits);
 int uc_sha256_output(uc_sha_256_ctx_t *ctx, uint8_t *result);
+
+/*
+ * SHA-224
+ */
+
+/* The SHA-256 structure is used for calculating SHA-224 */
+typedef uc_sha_256_ctx_t uc_sha_224_ctx_t;
+
+int uc_sha224_init(uc_sha_224_ctx_t *ctx);
+int uc_sha224_reset(uc_sha_224_ctx_t *ctx);
+int uc_sha224_update(uc_sha_224_ctx_t *ctx, uint8_t *message, uint64_t nbytes);
+int uc_sha224_finalize(uc_sha_224_ctx_t *ctx);
+int uc_sha224_finalize_with_bits(uc_sha_224_ctx_t *ctx, uint8_t data, uint64_t nbits);
+int uc_sha224_output(uc_sha_224_ctx_t *ctx, uint8_t *result);
+
 
 /*
  * Generic SHA

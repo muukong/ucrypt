@@ -5,6 +5,7 @@
 #ifndef UCRYPT_HASHTESTS_H
 #define UCRYPT_HASHTESTS_H
 
+char *test_sha224();
 char *test_sha256();
 
 char *test_hmac();
