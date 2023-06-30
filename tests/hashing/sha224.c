@@ -6,7 +6,7 @@
 #include <ucrypt/sha.h>
 
 /*
- * Test SHA-224 implementation based on test cases defined in NIST's SHA examples document
+ * Test SHA-224 unit tests based on test cases defined in NIST's SHA examples document
  * https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/examples/sha_all.pdf
  */
 

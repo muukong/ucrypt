@@ -7,6 +7,7 @@
 
 char *test_sha224();
 char *test_sha256();
+char *test_sha512();
 
 char *test_hmac();
 

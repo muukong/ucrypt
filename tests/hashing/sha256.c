@@ -6,7 +6,7 @@
 #include <ucrypt/sha.h>
 
 /*
- * Test SHA-256 implementation based on test cases defined in NIST's SHA examples document
+ * Test SHA-256 unit tests based on test cases defined in NIST's SHA examples document
  * https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/examples/sha_all.pdf
  */
 
@@ -73,14 +73,14 @@ static int is_equal(uint8_t *digest_baseline, uint8_t *digest)
     return equal;
 }
 
-static void print_digest(uint8_t *digest)
-{
-    int i;
-
-    for ( i = 0; i < UC_SHA256_DIGEST_SIZE; ++i )
-        printf("%02x", digest[i]);
-    puts("");
-}
+//static void print_digest(uint8_t *digest)
+//{
+//    int i;
+//
+//    for ( i = 0; i < UC_SHA256_DIGEST_SIZE; ++i )
+//        printf("%02x", digest[i]);
+//    puts("");
+//}
 
 char *test_sha256()
 {

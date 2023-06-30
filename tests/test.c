@@ -14,6 +14,7 @@ static char *all_tests(void)
     mu_run_test(test_exp_mod);
     mu_run_test(test_sha224);
     mu_run_test(test_sha256);
+    mu_run_test(test_sha512);
     mu_run_test(test_hmac);
     return 0;
 }

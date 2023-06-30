@@ -59,20 +59,16 @@ int uc_sha256_init(uc_sha_256_ctx_t *ctx)
 
 int uc_sha256_reset(uc_sha_256_ctx_t *ctx)
 {
-    int i;
+   int i;
 
     if ( !ctx )
         return UC_SHA_NULL_ERROR;
 
     /* Clear message schedule and blocks (these might contain sensitive data) */
-
-    for ( i = 0; i < UC_SHA256_MESSAGE_SCHEDULE_SIZE; ++i )
-        ctx->W[i] = 0;
     for ( i = 0; i < UC_SHA256_MESSAGE_BLOCK_SIZE; ++i )
         ctx->block[i] = 0;
 
     /* Rest remaining fields */
-
     return uc_sha256_init(ctx);
 }
 
@@ -176,11 +172,11 @@ int uc_sha256_output(uc_sha_256_ctx_t *ctx, uint8_t *result)
 void _uc_sha256_transform_block(uc_sha_256_ctx_t *ctx)
 {
     int t, t4;
-    uint32_t a, b, c, d, e, f, g, h, T1, T2;
-    uint32_t *H, *W;
+    uint32_t W[UC_SHA256_MESSAGE_SCHEDULE_SIZE];   /* message schedule */
+    uint32_t a, b, c, d, e, f, g, h, T1, T2;       /* working variables */
+    uint32_t *H;
 
     H = ctx->H;
-    W = ctx->W;
 
     /* Prepare message schedule w */
 
@@ -232,6 +228,7 @@ void _uc_sha256_transform_block(uc_sha_256_ctx_t *ctx)
     H[6] += g;
     H[7] += h;
 
+    /* Reset block index */
     ctx->block_index = 0;
 }
 

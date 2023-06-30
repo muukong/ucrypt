@@ -34,8 +34,8 @@ int uc_sha224_reset(uc_sha_224_ctx_t *ctx)
 
     /* Clear message schedule and blocks (these might contain sensitive data) */
 
-    for ( i = 0; i < UC_SHA256_MESSAGE_SCHEDULE_SIZE; ++i )
-        ctx->W[i] = 0;
+//    for ( i = 0; i < UC_SHA256_MESSAGE_SCHEDULE_SIZE; ++i )
+//        ctx->W[i] = 0;
     for ( i = 0; i < UC_SHA256_MESSAGE_BLOCK_SIZE; ++i )
         ctx->block[i] = 0;
 
