@@ -11,10 +11,11 @@
 
 
 #define UC_SHA256_DIGEST_SIZE 32           /* SHA-256 hash size in bytes */
-#define UC_SHA224_DIGEST_SIZE 28           /* SHA-224 hash size in bytes */
 #define UC_SHA256_MESSAGE_BLOCK_SIZE 64
 #define UC_SHA256_MESSAGE_SCHEDULE_SIZE 64
 
+#define UC_SHA224_DIGEST_SIZE 28           /* SHA-224 hash size in bytes */
+#define UC_SHA224_MESSAGE_BLOCK_SIZE UC_SHA256_MESSAGE_BLOCK_SIZE
 
 #define UC_SHA_MAX_MESSAGE_BLOCK_SIZE UC_SHA256_MESSAGE_BLOCK_SIZE
 
@@ -25,6 +26,7 @@
 
 typedef enum uc_sha_version_t
 {
+    UC_SHA224,
     UC_SHA256
 } uc_sha_version_t;
 
@@ -77,6 +79,7 @@ typedef struct uc_sha_ctx_t
 {
     uc_sha_version_t sha_version;
     union {
+        uc_sha_224_ctx_t sha224_ctx;
         uc_sha_256_ctx_t sha256_ctx;
     } ctx;
 } uc_sha_ctx_t;
