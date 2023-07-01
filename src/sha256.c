@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdio.h>
 #include <ucrypt/sha.h>
 
 #define SHR(n, x) ((x) >> (n))
@@ -172,6 +173,7 @@ int uc_sha256_output(uc_sha_256_ctx_t *ctx, uint8_t *result)
 void _uc_sha256_transform_block(uc_sha_256_ctx_t *ctx)
 {
     int t, t4;
+    int i;
     uint32_t W[UC_SHA256_MESSAGE_SCHEDULE_SIZE];   /* message schedule */
     uint32_t a, b, c, d, e, f, g, h, T1, T2;       /* working variables */
     uint32_t *H;
@@ -191,6 +193,16 @@ void _uc_sha256_transform_block(uc_sha_256_ctx_t *ctx)
     for ( t = 16; t < 64; ++t )
         W[t] = SSIG1(W[t-2]) + W[t-7] + SSIG0(W[t-15]) + W[t-16];
 
+    for ( i = 0; i < 64; ++i )
+    {
+        if ( i > 0 && i % 8 == 0)
+            printf("\n");
+        printf("%08x ", W[i]);
+
+    }
+    puts("");
+    puts("");
+
     /* Initialize working variables */
 
     a = H[0];
@@ -204,6 +216,8 @@ void _uc_sha256_transform_block(uc_sha_256_ctx_t *ctx)
 
     /* Perform main hash computation */
 
+    printf("%08x %08x %08x %08x %08x %08x %08x %08x\n", a, b, c, d, e, f, g, h);
+
     for ( t = 0; t < 64; ++t )
     {
         T1 = h + BSIG1(e) + CH(e,f,g) + K[t] + W[t];
@@ -216,6 +230,8 @@ void _uc_sha256_transform_block(uc_sha_256_ctx_t *ctx)
         c = b;
         b = a;
         a = T1 + T2;
+
+        printf("%08x %08x %08x %08x %08x %08x %08x %08x\n", a, b, c, d, e, f, g, h);
     }
 
     /* Compute intermediate hash values */
