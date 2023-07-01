@@ -7,6 +7,3 @@ venv
 
 # Test data directory
 tests/data
-
-# Personal debugging folder
-debug
