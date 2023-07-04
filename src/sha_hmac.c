@@ -1,9 +1,20 @@
 #include <ucrypt/sha.h>
 
+/* Initialize SHA with inner hash, i.e., H(K XOR ipad) */
+int _uc_sha_hmac_update_inner_hash(uc_sha_hmac_ctx_t *ctx)
+{
+    int i;
+    uint8_t block[UC_SHA_MAX_MESSAGE_BLOCK_SIZE];
+
+    for ( i = 0; i < ctx->sha_message_block_length; ++i )
+        block[i] = ctx->key[i] ^ 0x36;
+
+    return uc_sha_update(&ctx->sha_ctx, block, ctx->sha_message_block_length);
+}
+
 int uc_sha_hmac_init(uc_sha_hmac_ctx_t *ctx, uc_sha_version_t sha_version, uint8_t *key, int key_len)
 {
     int i, res;
-    uint8_t block[UC_SHA_MAX_MESSAGE_BLOCK_SIZE];
 
     /* Initialize underlying SHA context */
     if ((res = uc_sha_init(&ctx->sha_ctx, sha_version)) != UC_SHA_OK )
@@ -43,11 +54,23 @@ int uc_sha_hmac_init(uc_sha_hmac_ctx_t *ctx, uc_sha_version_t sha_version, uint8
             ctx->key[i] = 0;
     }
 
-    /* Compute H(K XOR ipad) */
-    for ( i = 0; i < ctx->sha_message_block_length; ++i )
-        block[i] = ctx->key[i] ^ 0x36;
+    return _uc_sha_hmac_update_inner_hash(ctx);
+}
 
-    return uc_sha_update(&ctx->sha_ctx, block, ctx->sha_message_block_length);
+int uc_sha_hmac_reset(uc_sha_hmac_ctx_t *ctx)
+{
+    int res;
+
+    if ( !ctx )
+        return UC_SHA_NULL_ERROR;
+
+    if ( (res = uc_sha_reset(&ctx->sha_ctx)) != UC_OK ||
+         (res = _uc_sha_hmac_update_inner_hash(ctx)) != UC_OK )
+    {
+        return res;
+    }
+
+    return UC_OK;
 }
 
 int uc_sha_hmac_update(uc_sha_hmac_ctx_t *ctx, uint8_t *message, uint64_t nbytes)
