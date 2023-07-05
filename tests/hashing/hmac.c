@@ -92,7 +92,7 @@ char *test_hmac()
     uint8_t tc_tag[UC_SHA256_DIGEST_SIZE];
     uint8_t tag[UC_SHA256_DIGEST_SIZE];
 
-    printf("[*] Running HMAC testcases...");
+    printf("[*] Running HMAC testcases...\n");
 
     for ( i = 0; i < NOF_TESTCASES; ++i )
     {

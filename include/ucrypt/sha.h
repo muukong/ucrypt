@@ -173,6 +173,8 @@ int uc_sha_digest_length(uc_sha_ctx_t *ctx, int *length);
  * SHA-HMAC
  */
 
+#define UC_SHA_HMAC_MAX_LENGTH  UC_SHA512_DIGEST_SIZE
+
 typedef struct uc_sha_hmac_ctx_t
 {
     uc_sha_ctx_t sha_ctx;
@@ -182,6 +184,7 @@ typedef struct uc_sha_hmac_ctx_t
 } uc_sha_hmac_ctx_t;
 
 int uc_sha_hmac_init(uc_sha_hmac_ctx_t *ctx, uc_sha_version_t sha_version, uint8_t *key, int key_len);
+int uc_sha_hmac_reset(uc_sha_hmac_ctx_t *ctx);
 int uc_sha_hmac_update(uc_sha_hmac_ctx_t *ctx, uint8_t *message, uint64_t nbytes);
 int uc_sha_hmac_finalize(uc_sha_hmac_ctx_t *ctx);
 int uc_sha_hmac_output(uc_sha_hmac_ctx_t *ctx, uint8_t *result);

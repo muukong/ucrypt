@@ -18,6 +18,7 @@ static char *all_tests(void)
     mu_run_test(test_sha384);
     mu_run_test(test_sha512);
     mu_run_test(test_hmac);
+    mu_run_test(test_pbkdf2);
     return 0;
 }
 

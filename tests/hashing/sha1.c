@@ -17,7 +17,7 @@ struct sha1_testcase {
     const uint64_t message_length; /* message length in bytes */
     const char *digest;
     uint64_t repetitions;
-} sha1_hashes[NOF_TESTCASES] = {
+} pbkdf2_testcases[NOF_TESTCASES] = {
     {
         "abc",
         3,
@@ -99,14 +99,14 @@ char *test_sha1()
         uc_sha_1_ctx_t ctx;
         uc_sha1_init(&ctx);
 
-        tc_input = malloc(sha1_hashes[i].message_length);
-        for ( j = 0; j < sha1_hashes[i].message_length; ++j )
-            tc_input[j] = (uint8_t) sha1_hashes[i].message[j];
+        tc_input = malloc(pbkdf2_testcases[i].message_length);
+        for ( j = 0; j < pbkdf2_testcases[i].message_length; ++j )
+            tc_input[j] = (uint8_t) pbkdf2_testcases[i].message[j];
         for ( j = 0; j < UC_SHA1_DIGEST_SIZE; ++j )
-            tc_digest[j] = (uint8_t) sha1_hashes[i].digest[j];
+            tc_digest[j] = (uint8_t) pbkdf2_testcases[i].digest[j];
 
-        for ( j = 0; j < sha1_hashes[i].repetitions; ++j )
-            uc_sha1_update(&ctx, tc_input, sha1_hashes[i].message_length);
+        for ( j = 0; j < pbkdf2_testcases[i].repetitions; ++j )
+            uc_sha1_update(&ctx, tc_input, pbkdf2_testcases[i].message_length);
         uc_sha1_finalize(&ctx);
         uc_sha1_output(&ctx, digest);
         success = is_equal(tc_digest, digest);

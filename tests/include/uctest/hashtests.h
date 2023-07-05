@@ -13,4 +13,6 @@ char *test_sha512();
 
 char *test_hmac();
 
+char *test_pbkdf2();
+
 #endif //UCRYPT_HASHTESTS_H
